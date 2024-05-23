@@ -18,11 +18,6 @@ pip3 install torch torchvision torchaudio --index-url https://download.pytorch.o
 pip install flax==0.8.1 igraph unipath wandb==0.15.0
 ```
 
-For the creation of the TSP dataset `pyconcorde` has to be installed.
-For that follow the instructions on:
-https://github.com/jvkersch/pyconcorde
-
-
 ## Getting started
 - get started by creating a dataset with the DatasetCreator
 ```
