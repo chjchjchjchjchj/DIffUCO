@@ -69,9 +69,14 @@ class GsetDatasetGenerator(BaseDatasetGenerator):
             generator = self._get_GsetGraph()
 
         idx = 0
-        for H_graph, density, graph_size, g in generator:
+        for H_graph, density, graph_size, g, file_num_dict in generator:
 
             Energy, boundEnergy, solution, runtime, H_graph_compl = self.solve_graph(H_graph, g)
+
+            if(self.mode == "test"):
+                file_num = file_num_dict["file_num"]
+                gt_MC_value = Gset_cut_sizes[str(file_num)]
+                Energy = -2*(gt_MC_value - H_graph_compl.n_edge[0] / 2  )
 
             solutions["Energies"].append(Energy)
             solutions["H_graphs"].append(H_graph)
@@ -103,7 +108,7 @@ class GsetDatasetGenerator(BaseDatasetGenerator):
 
             g = self.nx_to_igraph(gnx)
             H_graph, density, graph_size = self.igraph_to_jraph(g)
-            yield H_graph, density, graph_size, g
+            yield H_graph, density, graph_size, g, {}
         return
 
     def _get_GsetGraph(self):
@@ -123,7 +128,7 @@ class GsetDatasetGenerator(BaseDatasetGenerator):
             filename = os.fsdecode(file)
             H_graph, g = load_mc_file(str(directory_in_str) + "/" +filename, self.mode)
             _, density, graph_size = self.igraph_to_jraph(g)
-            yield H_graph, density, graph_size, g
+            yield H_graph, density, graph_size, g, {"file_num": file_num}
         return
 
 
@@ -213,12 +218,12 @@ def generateER(mode = "val", n_train_graphs = 16000,seed = 123, m = 4, dataset_n
 
 
 def load_mc_file(path, mode):
-    print(path)
+
     if(mode == "test"):
         gnx = load_mc(path)
     else:
         gnx = load_mtx(path)
-    print("nx", len(gnx.nodes()), len(gnx.edges()))
+
     g = ig.Graph()
     g.add_vertices(np.arange(0, len(gnx.nodes())))
     g.add_edges(gnx.edges())
