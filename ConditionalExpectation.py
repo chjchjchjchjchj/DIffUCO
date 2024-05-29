@@ -18,16 +18,6 @@ import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 
-"""
-Conditional Expectation
-
-1. Sort spins by probability and set the most probable one
-2. Calculate expected energy by sampling N states where the set spin is fixed (for both -1 and 1) -> use better for that spin
-3. Set the spin with the next highest probability
-4. Calculate expected energy by sampling N states where the two set spins are fixed (for both -1 and 1 for the second spin) -> use better for that spin
-5. ...
-"""
-
 
 class ConditionalExpectation:
     def __init__(self, wandb_id, n_different_random_node_features, k = 1, load_best_network = True, eval_step_factor = 2, project_name = ""):
@@ -441,213 +431,42 @@ class ConditionalExpectation:
         return result_dict
 
 
-def eval_on_RB_small_p(runs, diff_ps = True, size = "small", mode = "test"):
-    ks = [10]
-    for k in ks:
-        for checkpoints in [True]:
-            for run_Id in runs:
-                p_energy_list = []
-                ps = np.linspace(0.25, 1, 10)
-                CE = ConditionalExpectation(wandb_id=run_Id, n_different_random_node_features=8, k=k,
-                                            load_best_network=checkpoints)
-
-                for p in ps:
-                    CE.init_dataset(dataset_name=f"RB_iid_{size}_p_{p}", mode=mode)
-                    energies = CE.run(p=None)
-                    p_energy_list.append(energies)
-                    print('\n###\n')
-
-                wandb.log({"dataset_energy": np.mean(p_energy_list)})
-                wandb.finish()
 
 
-def eval_on_Gset(mode = "test", ks = [8]):
-    runs = [ "8nkjxun0"]
-    G_set_sizes = [800,1000]
-    #G_set_sizes = [3000]
-    eval_step_factors = [3]
-    for eval_step_factor in eval_step_factors:
-        for gset_size in G_set_sizes:
-            for k in ks:
-                for seed_idx, run_Id in enumerate(runs):
+def eval_on_dataset(config):
+    CE = ConditionalExpectation(wandb_id=config["wandb_id"], n_different_random_node_features=config["n_samples"], k=1, eval_step_factor=config["evaluation_factor"])
+    # CE.init_dataset(dataset_name=f"RB_iid_200_p_{p}", mode="test")
+    test_log_dict = CE.run(p=None, dataset_name=config["dataset"], mode="test")
 
-                    CE = ConditionalExpectation(wandb_id=run_Id, n_different_random_node_features=20, k = k, eval_step_factor = eval_step_factor)
-                    CE.runG_set_(p=None, dataset_name = f"Gset_{gset_size}", mode=mode, measure_time=True, break_after_time=180)
-                    print('\n###\n')
-
-def eval_on_BA(runs, mode = "test", size = "small", ks = [12,10,1]):
-    for k in ks:
-        for seed_idx, run_Id in enumerate(runs):
-            if (seed_idx == 0):
-                measure_time = True
-            else:
-                measure_time = False
-            CE = ConditionalExpectation(wandb_id=run_Id, n_different_random_node_features=8, k = k, eval_step_factor = 3)
-            energies = CE.run(p=None, dataset_name = f"BA_{size}", mode=mode, measure_time=measure_time)
-            print('\n###\n')
-
-def eval_on_TSP(runs, mode = "test", size = "20", ks = [12,10,1]):
-    jax.config.update('jax_disable_jit', True)
-    jax.config.update('jax_platform_name', 'cpu')
-    for k in ks:
-        for run_Id in runs:
-
-            CE = ConditionalExpectation(wandb_id=run_Id, n_different_random_node_features=8, k = k)
-            energies = CE.run(p=None, dataset_name = f"2D_random_{size}", mode=mode, measure_time=True)
-            print('\n###\n')
+import argparse
 
 
-def eval_on_RB(runs, mode = "test", size = "small", ks = [12, 10,1]):
-    for k in ks:
-        for seed_idx, run_Id in enumerate(runs):
-            for eval_steps_factor in [1,3]:
+parser = argparse.ArgumentParser()
 
-                if(seed_idx == 0):
-                    measure_time = True
-                else:
-                    measure_time = False
-                measure_time = False
+parser.add_argument('--wandb_id', default="kj0bihnz", type = str)
+parser.add_argument('--dataset', default="RB_iid_small", type = str)
+parser.add_argument('--GPU', default=7, type = int)
+parser.add_argument('--evaluation_factor', default=3, type = int)
+parser.add_argument('--n_samples', default=8, type = int, help = "number of samples for each graph")
 
-                CE = ConditionalExpectation(wandb_id=run_Id, n_different_random_node_features=8, k = k, eval_step_factor = eval_steps_factor)
-                best_rel_error = CE.run(p=None, dataset_name = f"RB_iid_{size}", mode=mode, measure_time=measure_time)
-                print('\n###\n')
-
-
-def eval_on_RB_more_steps(runs, mode = "test", size = "small", ks = [8]):
-    for k in ks:
-        for run_idx, run_Id in enumerate(runs):
-            for eval_steps in np.arange(1,9):
-
-                measure_time = False
-
-                CE = ConditionalExpectation(wandb_id=run_Id, n_different_random_node_features=8, k = k, eval_step_factor = eval_steps, project_name = "more_steps")
-                energies = CE.run(p=None, dataset_name = f"RB_iid_{size}", mode=mode, measure_time=measure_time)
-                print('\n###\n')
-
-def eval_on_RB_100(runs, mode = "test", size = "100", ks = [8]):
-    eval_steps = 3
-    for k in ks:
-        for run_idx, run_Id in enumerate(runs):
-
-            measure_time = False
-
-            CE = ConditionalExpectation(wandb_id=run_Id, n_different_random_node_features=8, k = k, eval_step_factor = eval_steps, project_name = "more_steps")
-            energies = CE.run(p=None, dataset_name = f"RB_iid_{size}", mode=mode, measure_time=measure_time)
-            print('\n###\n')
-
-def eval_on_RB_200_dataset():
-    runs = ["bf7sgj4j"]
-    ks = [1]
-    for k in ks:
-        for run_Id in runs:
-            res_dict = {"ps": [], "best_rel_error": []}
-            ps = np.linspace(0.25, 1, 10)
-            for p in ps:
-                CE = ConditionalExpectation(wandb_id=run_Id, n_different_random_node_features=8, k = k, eval_step_factor = 3)
-                #CE.init_dataset(dataset_name=f"RB_iid_200_p_{p}", mode="test")
-                test_log_dict = CE.run(p=None, dataset_name = f"RB_iid_200_p_{p}", mode = "test")
-                best_rel_error = test_log_dict['test/best_APR_CE']
-                print('\n###\n')
-                res_dict["ps"].append(p)
-                res_dict["best_rel_error"].append(best_rel_error)
-
-            print(res_dict)
-
-def eval_on_RB_small_dataset():
-    runs = ["kj0bihnz"]
-    ks = [1]
-    for k in ks:
-        for run_Id in runs:
-            res_dict = {"ps": [], "best_rel_error": []}
-            ps = np.linspace(0.25, 1, 10)
-            for p in ps:
-                CE = ConditionalExpectation(wandb_id=run_Id, n_different_random_node_features=8, k = k, eval_step_factor = 3)
-                #CE.init_dataset(dataset_name=f"RB_iid_200_p_{p}", mode="test")
-                best_rel_error = CE.run(p=None, dataset_name = f"RB_iid_small", mode = "test")
-                print('\n###\n')
-                res_dict["ps"].append(p)
-                res_dict["best_rel_error"].append(best_rel_error)
-
-            print(res_dict)
-
-
-def innit_fontsize():
-    import matplotlib.pyplot as plt
-    SMALL_SIZE = 8
-    MEDIUM_SIZE = 15
-    BIGGER_SIZE = 12
-
-    plt.rc('font', size=SMALL_SIZE)  # controls default text sizes # fontsize of the x and y labels
-    plt.rc('xtick', labelsize=MEDIUM_SIZE)  # fontsize of the tick labels
-    plt.rc('ytick', labelsize=MEDIUM_SIZE)  # fontsize of the tick labels
-    plt.rc('legend', fontsize=12)  # legend fontsize
-    plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
-
-
-
-def eval_RB_MIS_small_runs_more_steps():
-    wandb_ids = [ "c469t80i"]
-
-    eval_on_RB_more_steps(wandb_ids, mode = "test", size = "small", ks = [8])
-
-def eval_RB_MIS_small_runs():
-    wandb_ids = ["9mg6och8"]
-
-    eval_on_RB(wandb_ids, mode = "test", size = "small", ks = [8,1])
-
-
-def eval_RB_MIS_100_runs():
-    wandb_ids = ["tls9h6jc"]
-
-    eval_on_RB_100(wandb_ids, mode = "test", size = "100", ks = [5])
-
+args = parser.parse_args()
 
 if __name__ == "__main__":
-    ### TODO list here all wandb_ids and their corresponding datasets
-    ### TODO write code that automatically reports mean, std err and needed time to wandb
 
-    ### TODO also log mean_CE
-    #eval_BA_small_MDS()
-    ### TODO use GPU 0 or gpu 1 here
-    ### eagle 0 and 6
-    device = 4#str("MIG-6dcab994-f9fb-581b-bcd1-b97da093d3be")
+    device = args.GPU
     print("Measure Time")
     os.environ['CUDA_DEVICE_ORDER'] = "PCI_BUS_ID"
     os.environ['CUDA_VISIBLE_DEVICES'] = str(device)
     os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = "0.95"
-    #jax.config.update('jax_platform_name', 'cpu')
-    #eval_on_RB_200_dataset()
-    eval_on_RB_small_dataset()
-    #eval_RB_100_MIS_runs()
-    #eval_RB_MIS_small_runs()
-    #jax.config.update('jax_platform_name', 'cpu')
-    #eval_on_RB_200_dataset()
-    #
-    #calc_mean_results()
-    # plot_more_steps_during_eval()
-    # raise ValueError()
-    #eval_RB_100_MIS_runs()
-    #jax.config.update('jax_platform_name', 'cpu')
-    #jax.config.update('jax_disable_jit', True)
-    #eval_on_RB_200_dataset()
-    #eval_RB_MIS_small_runs_more_steps()
 
-    # eval_RB_MIS_small_runs()
-    # eval_RB_MaxCl_small_runs()
-    # eval_RB_MIS_large_runs()
-    # eval_BA_MDS_small_runs()
-    # eval_BA_MDS_large_runs()
-    # eval_BA_MaxCut_large_runs()
-    # eval_BA_MaxCut_small_runs()
-    #
-    # print(f"GPU: {device}")
-    #
-    # wandb_id = "3iut7t6v" #"k70oqu9p" #"z4jmevmj"#"q916v52s"
-    # CE = ConditionalExpectation(wandb_id=wandb_id, n_different_random_node_features=8)
-    # CE.init_dataset(dataset_name=None, mode = "test")
-    # CE.run(p=None)
-    # print('\n###\n')
-    #CE.run_time(p=None)
+    config = {
+        "wandb_id": args.wandb_id,
+        "dataset": args.dataset,
+        "evaluation_factor": args.evaluation_factor,
+        "n_samples": args.n_samples,
+    }
+
+    eval_on_dataset(config)
 
 
 

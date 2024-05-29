@@ -9,7 +9,6 @@ class BernoulliNoiseDistr(BaseNoiseDistr):
         super().__init__(config)
 
     def combine_losses(self, L_entropy, L_noise, L_energy, T):
-        print("Warning: Loss has been changed and should be tested")
         return -T * L_entropy + L_noise + L_energy
 
     def calculate_noise_distr_reward(self, noise_distr_step, entropy_step, T):

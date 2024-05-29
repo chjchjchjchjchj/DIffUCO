@@ -51,5 +51,21 @@ python argparse_ray_main.py --lrs 0.002 --GPUs 0 --n_GNN_layers 8 --temps 0.6 --
 `--temps` Starting temperature for annealing\
 
 
+### To evaluate the model use "ConditionalExpectation.py".
+
+After training, you can evaluate the model on the test set with:
+```
+python ConditionalExpectation.py --wandb_id kj0bihnz --dataset RB_iid_100 --GPU 0 --evaluation_factor 3 --n_samples 8
+```
+
+### parameter explanation
+`--wandb_id` is the wandb run id \
+`--dataset` is the dataset that will be used for evaluation\
+`--GPU` is the GPu that will beused for evaluation \
+`--n_samples` is the numer of samples that will be obtained for each graph \
+`--evaluation_factor` is the factor by which the number of diffusion steps is increased compared to the number of diffusion steps that are used during training. So for example if the model is trained with 5 diffusion steps and `--evaluation_factor 3`, then the model will be evaluated with 15 diffusion steps
+
+
+
 
 

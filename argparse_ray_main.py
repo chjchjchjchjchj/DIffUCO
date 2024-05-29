@@ -36,7 +36,7 @@ parser.add_argument('--loss_alpha', default=0.0, type = float, help='rel weighte
 parser.add_argument('--MCMC_steps', default=0, type = int, help='number of MCMC steps')
 parser.add_argument('--mov_average', default=0.0009, type = float, help='moving_average_for RL')
 parser.add_argument('--mem_frac', default= ".90", type = str, help='memory fraction')
-parser.add_argument('--diff_schedule', default= "own", type = str, help='define diffusion schedule')
+parser.add_argument('--diff_schedule', default= "DiffUCO", type = str, help='define diffusion schedule')
 parser.add_argument('--proj_method', default= "None", choices = ["None"], type = str, help='define projection method')
 parser.add_argument('--linear_message_passing', action='store_true')
 parser.add_argument('--no-linear_message_passing', dest='linear_message_passing', action='store_false')
@@ -54,6 +54,8 @@ parser.add_argument('--grad_clip', action='store_true')
 parser.add_argument('--no-grad_clip', dest='grad_clip', action='store_false')
 parser.add_argument('--graph_norm', action='store_true')
 parser.add_argument('--no-graph_norm', dest='graph_norm', action='store_false')
+parser.add_argument('--lr_schedule', action='store_true')
+parser.add_argument('--no-lr_schedule', dest='lr_schedule', action='store_false')
 parser.set_defaults(CE=False)
 parser.set_defaults(graph_norm=True)
 parser.set_defaults(grad_clip=True)
@@ -64,6 +66,7 @@ parser.set_defaults(deallocate=False)
 parser.set_defaults(jit=True)
 parser.set_defaults(linear_message_passing=True)
 parser.set_defaults(multi_gpu=True)
+parser.set_defaults(lr_schedule=False)
 ### TODO add gradient clipping?
 args = parser.parse_args()
 
@@ -202,7 +205,8 @@ def detect_and_run_for_loops():
                                                 "graph_norm": args.graph_norm,
                                                 "proj_method": args.proj_method,
                                                 "diff_schedule": args.diff_schedule,
-                                                "mov_average": args.mov_average
+                                                "mov_average": args.mov_average,
+                                                "lr_schedule": args.lr_schedule
                                             }
 
                                             run(flexible_config=flexible_config, overwrite=True)
@@ -266,7 +270,8 @@ def run( flexible_config, overwrite = True):
         "graph_norm": False,
         "proj_method": "None",
         "diff_schedule": "DiffUCO",
-        "mov_average": 0.05
+        "mov_average": 0.05,
+        "lr_schedule": False
 
     }
 

@@ -129,6 +129,8 @@ class TrainMeanField:
 		self.message_passing_weight_tied = self.config["message_passing_weight_tied"]
 		self.linear_message_passing = self.config["linear_message_passing"]
 
+		self.lr_schedule = self.config["lr_schedule"]
+
 		if("edge_updates" in self.config.keys()):
 			self.edge_updates = self.config["edge_updates"]
 		else:
@@ -281,9 +283,14 @@ class TrainMeanField:
 	def __init_optimizer(self, lr, params):
 		# self.optimizer = optax.radam(learning_rate=self.curr_lr)
 		self.epoch_length = len(self.dataloader_train)*self.TrainerClass.inner_update_steps
+
+		if (self.lr_schedule):
+			lr_schedule_func = lambda step: -cos_schedule(step, self.epoch_length * (self.N_anneal + self.N_warmup), max_lr=lr,min_lr=lr / 10)
+		else:
+			lr_schedule_func = lambda step: -lr
+
 		if(self.config["grad_clip"]):
-			opt = optax.chain(optax.clip_by_global_norm(1.0), optax.scale_by_radam(),
-										 optax.scale_by_schedule(lambda step: -cos_schedule(step, self.epoch_length*(self.N_anneal + self.N_warmup), max_lr=lr, min_lr = lr/10)))
+			opt = optax.chain(optax.clip_by_global_norm(1.0), optax.scale_by_radam(), optax.scale_by_schedule(lr_schedule_func))
 			opt_init, self.opt_update = opt
 
 		else:
@@ -294,8 +301,7 @@ class TrainMeanField:
 			# self.opt_update = optimizer.update
 			# opt_init = optimizer.init
 
-			opt_init, self.opt_update = optax.chain( optax.scale_by_radam(),
-										 optax.scale_by_schedule(lambda step: -cos_schedule(step, self.epoch_length*(self.N_anneal + self.N_warmup), max_lr=lr, min_lr = lr/10)))
+			opt_init, self.opt_update = optax.chain( optax.scale_by_radam(), optax.scale_by_schedule(lr_schedule_func))
 
 		if(self.load_wandb_id == None):
 			self.opt_state = jax.pmap(opt_init)(params)
