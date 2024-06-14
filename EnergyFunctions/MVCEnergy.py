@@ -69,6 +69,6 @@ class MVCEnergyClass(BaseEnergyClass):
         self.calculate_Energy_relaxed(H_graph, bins, node_gr_idx, A = A, B = B)
 
     @partial(jax.jit, static_argnums=(0,))
-    def calculate_Energy_loss(self, H_graph, logits, node_gr_idx, Energy_func):
+    def calculate_Energy_loss(self, H_graph, logits, node_gr_idx):
         p = jnp.exp(logits[...,1])
         return self.calculate_Energy(H_graph, p, node_gr_idx)
