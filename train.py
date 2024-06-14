@@ -129,8 +129,6 @@ class TrainMeanField:
 		self.message_passing_weight_tied = self.config["message_passing_weight_tied"]
 		self.linear_message_passing = self.config["linear_message_passing"]
 
-		self.lr_schedule = self.config["lr_schedule"]
-
 		if("edge_updates" in self.config.keys()):
 			self.edge_updates = self.config["edge_updates"]
 		else:
@@ -283,14 +281,9 @@ class TrainMeanField:
 	def __init_optimizer(self, lr, params):
 		# self.optimizer = optax.radam(learning_rate=self.curr_lr)
 		self.epoch_length = len(self.dataloader_train)*self.TrainerClass.inner_update_steps
-
-		if (self.lr_schedule):
-			lr_schedule_func = lambda step: -cos_schedule(step, self.epoch_length * (self.N_anneal + self.N_warmup), max_lr=lr,min_lr=lr / 10)
-		else:
-			lr_schedule_func = lambda step: -lr
-
 		if(self.config["grad_clip"]):
-			opt = optax.chain(optax.clip_by_global_norm(1.0), optax.scale_by_radam(), optax.scale_by_schedule(lr_schedule_func))
+			opt = optax.chain(optax.clip_by_global_norm(1.0), optax.scale_by_radam(),
+										 optax.scale_by_schedule(lambda step: -cos_schedule(step, self.epoch_length*(self.N_anneal + self.N_warmup), max_lr=lr, min_lr = lr/10)))
 			opt_init, self.opt_update = opt
 
 		else:
@@ -301,7 +294,8 @@ class TrainMeanField:
 			# self.opt_update = optimizer.update
 			# opt_init = optimizer.init
 
-			opt_init, self.opt_update = optax.chain( optax.scale_by_radam(), optax.scale_by_schedule(lr_schedule_func))
+			opt_init, self.opt_update = optax.chain( optax.scale_by_radam(),
+										 optax.scale_by_schedule(lambda step: -cos_schedule(step, self.epoch_length*(self.N_anneal + self.N_warmup), max_lr=lr, min_lr = lr/10)))
 
 		if(self.load_wandb_id == None):
 			self.opt_state = jax.pmap(opt_init)(params)
@@ -545,7 +539,7 @@ class TrainMeanField:
 		self.save_metrics_dict["eval/gt_energy"] = []
 		self.save_metrics_dict["eval/rel_error"] = []
 		self.__save_params_every_epoch(0)
-		#self.eval(epoch=0)
+		self.eval(epoch=0)
 		print("start training...")
 		epoch_range = np.arange(self.curr_epoch, self.epochs)
 
@@ -564,8 +558,9 @@ class TrainMeanField:
 			epoch_time_dict["epoch_time/backprob"] = []
 			epoch_time_dict["epoch_time/logging"] = []
 			for iter, (batch_dict) in enumerate(self.dataloader_train):
-				print("batch", iter, "of", len(self.dataloader_train))
 				gt_normed_energies = batch_dict["energies"]
+				print("batch", iter, "of", len(self.dataloader_train))
+				print("batchsize is", len(gt_normed_energies))
 
 				step1 = time.time()
 				loss, (log_dict, energy_graph_batch, batching_time) = self.train_step(batch_dict)
@@ -576,13 +571,13 @@ class TrainMeanField:
 					batch_log_dict = self.__calculate_reporting(energy_graph_batch,
 						log_dict_metrics["energies"], gt_normed_energies, log_dict_metrics["spin_log_probs"], log_dict_metrics["free_energies"])
 
-					energy_dict = {f"energies/{key}": np.mean(log_dict["energies"][key]) for key in log_dict["energies"]}
-
+					### concatenate along device dim
+					energy_dict = {f"energies/{key}": log_dict["energies"][key] for key in log_dict["energies"]}
 					for key in batch_log_dict.keys():
 						if key not in wandb_log_dict:
 							wandb_log_dict[key] = []
 
-						wandb_log_dict[key].append(batch_log_dict[key])
+						wandb_log_dict[key].append(batch_log_dict[key][None, ...])
 
 					for key in energy_dict.keys():
 						if key not in wandb_log_dict:
@@ -590,7 +585,7 @@ class TrainMeanField:
 
 						wandb_log_dict[key].append(energy_dict[key])
 
-				loss_dict = {f"losses/{key}": np.mean(log_dict["Losses"][key]) for key in log_dict["Losses"]}
+				loss_dict = {f"losses/{key}": log_dict["Losses"][key] for key in log_dict["Losses"]}
 				for key in loss_dict.keys():
 					if key not in wandb_log_dict:
 						wandb_log_dict[key] = []
@@ -635,9 +630,17 @@ class TrainMeanField:
 				wandb_epoch_time_dict["train/" + key] = np.sum(epoch_time_dict[key])
 
 			for key in wandb_log_dict.keys():
+				#print(type(wandb_log_dict[key]))
 				try:
-					train_log_dict["train/" + key] = np.mean(np.concatenate(wandb_log_dict[key], axis=0))
+					#print(key)
+					#print("shape before concatenation", np.array(wandb_log_dict[key]).shape)
+					### concatenate along
+					res = np.concatenate(np.concatenate(wandb_log_dict[key], axis=1), axis=0)
+					#print(res.shape, "concate result")
+					train_log_dict["train/" + key] = np.mean(res)
 				except:
+
+					#print("shape jsut calc the mean", np.array(wandb_log_dict[key]).shape)
 					train_log_dict["train/" + key] = np.mean(wandb_log_dict[key])
 
 			wandb.log(train_log_dict)
@@ -662,6 +665,7 @@ class TrainMeanField:
 		save_metrics_at_epoch["eval/rel_error"] = []
 		for iter, (batch_dict) in enumerate(dataloader):
 			gt_normed_energies = batch_dict["energies"]
+			print("batchsize is", len(gt_normed_energies))
 
 			graph_batch, energy_graph_batch = self._prepare_graphs(batch_dict)
 
@@ -673,14 +677,14 @@ class TrainMeanField:
 
 			log_dict_metrics = jax.tree_map(reshape_utils.unravel_dict, log_dict["metrics"])
 			if("Losses" in log_dict.keys()):
-				loss_dict = {f"losses/{key}": np.mean(log_dict["Losses"][key]) for key in log_dict["Losses"]}
+				loss_dict = {f"losses/{key}": log_dict["Losses"][key] for key in log_dict["Losses"]}
 				for key in loss_dict.keys():
 					if key not in wandb_log_dict:
 						wandb_log_dict[key] = []
 
 					wandb_log_dict[key].append(loss_dict[key])
 
-			energy_dict = {f"energies/{key}": np.mean(log_dict["energies"][key]) for key in log_dict["energies"]}
+			energy_dict = {f"energies/{key}": log_dict["energies"][key] for key in log_dict["energies"]}
 
 			batch_log_dict = self.__calculate_reporting(energy_graph_batch,
 				log_dict_metrics["energies"], gt_normed_energies, log_dict_metrics["spin_log_probs"], log_dict_metrics["free_energies"])
@@ -689,7 +693,7 @@ class TrainMeanField:
 				if key not in wandb_log_dict:
 					wandb_log_dict[key] = []
 
-				wandb_log_dict[key].append(batch_log_dict[key])
+				wandb_log_dict[key].append(batch_log_dict[key][None, ...])
 
 			for key in energy_dict.keys():
 				if key not in wandb_log_dict:
@@ -706,8 +710,6 @@ class TrainMeanField:
 
 
 		self.__plot_figures( log_dict)
-		average_energy = np.mean(np.concatenate(wandb_log_dict["mean_energy"], axis = 0))
-		mean_rel_energies = np.mean(np.concatenate(wandb_log_dict["rel_error"], axis = 0))
 		eval_log_dict = {
 			f"{mode}/epoch": epoch,
 			f"{mode}/epochs_since_best": self.epochs_since_best,
@@ -717,10 +719,14 @@ class TrainMeanField:
 
 		for key in wandb_log_dict.keys():
 			try:
-				eval_log_dict[f"{mode}/"+ key] = np.mean(np.concatenate(wandb_log_dict[key], axis = 0))
+				res = np.concatenate(np.concatenate(wandb_log_dict[key], axis=1), axis=0)
+				eval_log_dict[f"{mode}/" + key] = np.mean(res)
 			except:
-				eval_log_dict[f"{mode}/"+ key] = np.mean(wandb_log_dict[key])
 
+				eval_log_dict[f"{mode}/" + key] = np.mean(wandb_log_dict[key])
+
+		average_energy = eval_log_dict[f"{mode}/mean_energy"]
+		mean_rel_energies = eval_log_dict[f"{mode}/rel_error"]
 
 		if mean_rel_energies < self.best_rel_error:
 			self.best_rel_error = mean_rel_energies
@@ -769,14 +775,15 @@ class TrainMeanField:
 
 			log_dict_metrics = jax.tree_map(reshape_utils.unravel_dict, log_dict["metrics"])
 			if("Losses" in log_dict.keys()):
-				loss_dict = {f"losses/{key}": np.mean(log_dict["Losses"][key]) for key in log_dict["Losses"]}
+				loss_dict = {f"losses/{key}": log_dict["Losses"][key] for key in log_dict["Losses"]}
 				for key in loss_dict.keys():
 					if key not in wandb_log_dict:
 						wandb_log_dict[key] = []
 
 					wandb_log_dict[key].append(loss_dict[key])
 
-			energy_dict = {f"energies/{key}": np.mean(log_dict["energies"][key]) for key in log_dict["energies"]}
+			### TODO fix this logging so that batchsize does not have an effect anymore
+			energy_dict = {f"energies/{key}": log_dict["energies"][key] for key in log_dict["energies"]}
 
 			batch_log_dict = self.__calculate_reporting(energy_graph_batch,
 				log_dict_metrics["energies"], gt_normed_energies, log_dict_metrics["spin_log_probs"], log_dict_metrics["free_energies"])
@@ -788,13 +795,13 @@ class TrainMeanField:
 				if key not in wandb_log_dict:
 					wandb_log_dict[key] = []
 
-				wandb_log_dict[key].append(batch_log_dict[key])
+				wandb_log_dict[key].append(batch_log_dict[key][None, ...])
 
 			for key in batch_CE_log_dict.keys():
 				if key not in wandb_log_dict:
 					wandb_log_dict[key] = []
 
-				wandb_log_dict[key].append(batch_CE_log_dict[key])
+				wandb_log_dict[key].append(batch_CE_log_dict[key][None, ...])
 
 			for key in energy_dict.keys():
 				if key not in wandb_log_dict:
@@ -811,9 +818,10 @@ class TrainMeanField:
 
 		for key in wandb_log_dict.keys():
 			try:
-				eval_log_dict[f"{mode}/"+ key] = np.mean(np.concatenate(wandb_log_dict[key], axis = 0))
+				res = np.concatenate(np.concatenate(wandb_log_dict[key], axis=1), axis=0)
+				eval_log_dict[f"{mode}/" + key] = np.mean(res)
 			except:
-				eval_log_dict[f"{mode}/"+ key] = np.mean(wandb_log_dict[key])
+				eval_log_dict[f"{mode}/" + key] = np.mean(wandb_log_dict[key])
 
 		return eval_log_dict
 
@@ -950,18 +958,16 @@ class TrainMeanField:
 
 		mean_prob_per_graph = self.calc_mean_prob(graphs, spin_log_probs)
 
-		log_dict = {"mean_energy": energies, "mean_normed_energy": mean_normed_energy, "mean_normed_free_energy": mean_normed_free_energy,
+		log_dict = {"mean_energy": energies, "mean_normed_energy": mean_normed_energy,
 					"mean_gt_energy": mean_gt_energy, "mean_best_energy":  mean_best_energy, "rel_error": rel_error_matrix,
 					"mean_best_rel_error": mean_best_rel_error, "mean_prob": mean_prob_per_graph}
 
 		if self.problem_name == 'MVC':
 			APR_per_graph = np.squeeze(energies, axis=-1) / gt_energies
 			best_APR_per_graph = min_energies / gt_energies
-			APR = np.mean(APR_per_graph)
-			best_APR = np.mean(best_APR_per_graph)
 
-			log_dict["APR"] = APR
-			log_dict["best_APR"] = best_APR
+			log_dict["APR"] = APR_per_graph
+			log_dict["best_APR"] = best_APR_per_graph
 		if self.problem_name == 'MaxCut':
 			energies = np.squeeze(energies, axis = -1)
 			num_edges = 2*np.reshape(graphs.n_edge[:,:-1],(graphs.n_edge.shape[0]*(graphs.n_edge.shape[1]-1),1))

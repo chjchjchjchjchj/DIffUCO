@@ -98,7 +98,7 @@ class RBDatasetGenerator(BaseDatasetGenerator):
 		Generate a RB graph instances for the dataset
 		"""
 		for p in self.p_list:
-			if p is not None:
+			if (self.diff_ps):
 				self.dataset_name = f"RB_iid_{self.size}_p_{p}"
 				self.graph_config["n_test"] = 100
 			else:
@@ -119,8 +119,12 @@ class RBDatasetGenerator(BaseDatasetGenerator):
 		}
 		for idx in tqdm(range(self.graph_config[f"n_{self.mode}"])):
 			while True:
-				if isinstance(p, type(None)):
+				if (not self.diff_ps):
+					#print("select new p", p)
 					p = np.random.uniform(self.graph_config["p_low"], self.graph_config["p_high"])
+				else:
+					pass
+				#print("curr", p)
 
 				min_n, max_n = self.graph_config["n_min"], self.graph_config["n_max"]
 				n = np.random.randint(self.graph_config["n_low"], self.graph_config["n_high"])
