@@ -5,8 +5,10 @@ from . import GsetDatasetGenerator
 from .BADatasetGenerator import BADatasetGenerator
 from .RBDatasetGenerator import RBDatasetGenerator
 from .GsetDatasetGenerator import GsetDatasetGenerator
+from .KSDatasetGenerator import KSDatasetGenerator
 
-dataset_generator_registry = {"BA": BADatasetGenerator, "RB_iid": RBDatasetGenerator, "Gset": GsetDatasetGenerator}
+# dataset_generator_registry = {"BA": BADatasetGenerator, "RB_iid": RBDatasetGenerator, "Gset": GsetDatasetGenerator}
+dataset_generator_registry = {"BA": BADatasetGenerator, "RB_iid": RBDatasetGenerator, "Gset": GsetDatasetGenerator, "KS": KSDatasetGenerator}
 
 
 def get_dataset_generator(config):

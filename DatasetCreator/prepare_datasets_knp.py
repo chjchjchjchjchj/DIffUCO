@@ -8,7 +8,10 @@ import argparse
 RB_datasets = ["RB_iid_200", "RB_iid_100", "RB_iid_small", "RB_iid_large", "RB_iid_giant", "RB_iid_huge", "RB_iid_dummy"]
 BA_datasets = ["BA_small", "BA_large", "BA_huge", "BA_giant", "BA_dummy"]
 Gset = ["Gset"]
-dataset_choices =  RB_datasets + BA_datasets  + Gset
+KS_datasets = ["KS_2", "KS_3", "KS_4", "KS_5"]
+# dataset_choices =  RB_datasets + BA_datasets  + Gset
+dataset_choices =  RB_datasets + BA_datasets + Gset + KS_datasets
+
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--licence_path', default="/system/user/sanokows/", type = str, help='licence base path')

@@ -8,7 +8,8 @@ parser.add_argument('--debug', action='store_true', help='Switch ray into local 
 parser.add_argument('--multi_gpu', action='store_true', help='wheter to use multi gpu or not, KEEP IT ALWAYS TRUE')
 parser.add_argument('--mode', default='Diffusion', choices = ["Diffusion"], help='Define the Approach')
 parser.add_argument('--EnergyFunction', default='MIS', choices = ["MaxCut", "MIS", "MVC", "MaxCl", "WMIS", "MDS"], help='Define the EnergyFunction of the IsingModel')
-parser.add_argument('--IsingMode', default='RB_iid_100', choices = ["Gset","BA_large","RB_iid_small", "RB_iid_dummy", "BA_dummy", "RB_iid_large" ,"RRG_200_k_=all", "BA_small", "COLLAB", "IMDB-BINARY", "RB_iid_100_dummy" , "RB_iid_200", "RB_iid_100"], help='Define the Training dataset')
+# parser.add_argument('--IsingMode', default='RB_iid_100', choices = ["Gset","BA_large","RB_iid_small", "RB_iid_dummy", "BA_dummy", "RB_iid_large" ,"RRG_200_k_=all", "BA_small", "COLLAB", "IMDB-BINARY", "RB_iid_100_dummy" , "RB_iid_200", "RB_iid_100"], help='Define the Training dataset')
+parser.add_argument('--IsingMode', default='RB_iid_100', choices = ["Gset","BA_large","RB_iid_small", "RB_iid_dummy", "BA_dummy", "RB_iid_large" ,"RRG_200_k_=all", "BA_small", "COLLAB", "IMDB-BINARY", "RB_iid_100_dummy" , "RB_iid_200", "RB_iid_100", "KS_iid_1000"], help='Define the Training dataset')
 parser.add_argument('--graph_mode', default='normal', choices = ["normal"], help='Use U-Net or normal GNN')
 parser.add_argument('--train_mode', default='REINFORCE', choices = ["REINFORCE"], help='Use U-Net or normal GNN')
 parser.add_argument('--AnnealSchedule', default='linear', choices = ["linear", "cosine"], help='Define the Annealing Schedule')
@@ -73,6 +74,10 @@ args = parser.parse_args()
 ### TODO add MaxCut
 
 def meanfield_run():
+    # print(f"args={args}")
+    # import sys; sys.exit()
+    # from argparse import Namespace
+    # args=Namespace(debug=False, multi_gpu=True, mode='Diffusion', EnergyFunction='MIS', IsingMode='RB_iid_100', graph_mode='normal', train_mode='REINFORCE', AnnealSchedule='linear', temps=[0.6], N_warmup=0, N_anneal=[2000], N_equil=0, lrs=[0.002], seed=[123], GPUs=['0'], n_hidden_neurons=[64], n_rand_nodes=2, stop_epochs=1000, n_diffusion_steps=[3], noise_potential=['bernoulli'], n_basis_states=[10], batch_size=[20], minib_diff_steps=3, minib_basis_states=10, inner_loop_steps=1, n_GNN_layers=[8], project_name='FirstRuns', beta_factor=[1.0], loss_alpha=0.0, MCMC_steps=0, mov_average=0.0009, mem_frac='.90', diff_schedule='DiffUCO', proj_method='None', linear_message_passing=True, relaxed=True, time_conditioning=True, deallocate=False, jit=True, mean_aggr=True, grad_clip=True, graph_norm=True, lr_schedule=False, CE=False)
     resources_per_trial = 1.
     devices = args.GPUs
     n_workers = int(len(devices)/resources_per_trial)

@@ -275,7 +275,7 @@ class SolutionDataset_InMemory(Dataset):
             base_path = "/mnt/proj2/dd-23-97/"
             load_path = base_path + f"no_norm/{self.dataset_name}/{self.mode}/{self.mode}/{self.seed}/{select_data_name}/indexed/"
         else:
-            base_path = os.path.dirname(os.getcwd()) + "/DiffUCO/DatasetCreator/loadGraphDatasets/DatasetSolutions/"
+            base_path = os.path.dirname(os.getcwd()) + "/DIffUCO/DatasetCreator/loadGraphDatasets/DatasetSolutions/"
 
             load_path = base_path + f"no_norm/{self.dataset_name}/{self.mode}/{self.seed}/{select_data_name}/indexed/"
         with open(load_path+ f"idx_{0}_solutions.pickle", "rb") as file:

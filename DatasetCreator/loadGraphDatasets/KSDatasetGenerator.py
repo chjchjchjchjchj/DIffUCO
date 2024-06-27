@@ -4,7 +4,9 @@ from tqdm import tqdm
 import numpy as np
 import igraph as ig
 import ipdb
-class RBDatasetGenerator(BaseDatasetGenerator):
+from .KS_graphs import generate_ks_instances
+
+class KSDatasetGenerator(BaseDatasetGenerator):
 	"""
 	Class for generating datasets with RB Graphs
 	"""
@@ -89,21 +91,104 @@ class RBDatasetGenerator(BaseDatasetGenerator):
 				"k_low": 8, "k_high": 11,
 				"n_train": 300, "n_val": 500, "n_test": 500
 			}
+		elif "KS_3" in dataset_name:
+			self.size = "1000"
+			graph_config = {
+				"p_low": 0.25, "p_high": 1,
+				"n_min": 0, "n_max": np.inf,
+				"n_low": 60, "n_high": 70,
+				"k_low": 15, "k_high": 20,
+				# "n_train": 3000, "n_val": 500, "n_test": 500
+				"n_train": 30, "n_val": 5, "n_test": 5
+			}
 		else:
-			raise NotImplementedError('Dataset name must contain either "small", "large", "huge", "giant", "100", "200" to infer the number of nodes')
+			raise NotImplementedError('Dataset name must contain either "small", "large", "huge", "giant", "100", "200", "KS" to infer the number of nodes')
 		return graph_config
+
+	# def generate_dataset(self):
+	# 	"""
+	# 	Generate a RB graph instances for the dataset
+	# 	"""
+	# 	for p in self.p_list:
+	# 		if (self.diff_ps):
+	# 			self.dataset_name = f"RB_iid_{self.size}_p_{p}"
+	# 			self.graph_config["n_test"] = 100
+	# 		else:
+	# 			self.dataset_name = f"RB_iid_{self.size}"
+	# 		self.generate_graphs(p)
 
 	def generate_dataset(self):
 		"""
-		Generate a RB graph instances for the dataset
+		Generate a KS graph instances for the dataset
 		"""
 		for p in self.p_list:
 			if (self.diff_ps):
-				self.dataset_name = f"RB_iid_{self.size}_p_{p}"
+				self.dataset_name = f"KS_iid_{self.size}_p_{p}"
 				self.graph_config["n_test"] = 100
 			else:
-				self.dataset_name = f"RB_iid_{self.size}"
+				self.dataset_name = f"KS_iid_{self.size}"
 			self.generate_graphs(p)
+
+	# def generate_graphs(self, p):
+	# 	solutions = {
+	# 		"Energies": [],
+	# 		"H_graphs": [],
+	# 		"gs_bins": [],
+	# 		"graph_sizes": [],
+	# 		"densities": [],
+	# 		"runtimes": [],
+	# 		"upperBoundEnergies": [],
+	# 		"compl_H_graphs": [],
+	# 		"p": []
+	# 	}
+	# 	for idx in tqdm(range(self.graph_config[f"n_{self.mode}"])):
+	# 		while True:
+	# 			if (not self.diff_ps):
+	# 				#print("select new p", p)
+	# 				p = np.random.uniform(self.graph_config["p_low"], self.graph_config["p_high"])
+	# 			else:
+	# 				pass
+	# 			#print("curr", p)
+
+	# 			min_n, max_n = self.graph_config["n_min"], self.graph_config["n_max"]
+	# 			n = np.random.randint(self.graph_config["n_low"], self.graph_config["n_high"])
+	# 			k = np.random.randint(self.graph_config["k_low"], self.graph_config["k_high"])
+	# 			# ipdb.set_trace()
+	# 			edges = generate_xu_instances.get_random_instance(n, k, p)
+	# 			path = "/home/chenhaojun/DIffUCO/draft/Data_for_solver.pkl"
+	# 			ipdb.set_trace()
+	# 			edges = generate_ks_instances.get_random_instance(path=path)
+	# 			g = ig.Graph([(edge[0], edge[1]) for edge in edges])
+	# 			isolated_nodes = [v.index for v in g.vs if v.degree() == 0]
+	# 			g.delete_vertices(isolated_nodes)
+	# 			num_nodes = g.vcount()
+	# 			if min_n <= num_nodes <= max_n:
+	# 				break
+
+	# 		H_graph, density, graph_size = self.igraph_to_jraph(g)
+	# 		Energy, boundEnergy, solution, runtime, compl_H_graph = self.solve_graph(H_graph,g)
+
+	# 		if not self.gurobi_solve:
+	# 			if self.problem == "MaxCl" or self.problem == "MIS":
+	# 				Energy = -n
+
+	# 		solutions["Energies"].append(Energy)
+	# 		solutions["H_graphs"].append(H_graph)
+	# 		solutions["gs_bins"].append(solution)
+	# 		solutions["graph_sizes"].append(graph_size)
+	# 		solutions["densities"].append(density)
+	# 		solutions["runtimes"].append(runtime)
+	# 		solutions["upperBoundEnergies"].append(boundEnergy)
+	# 		solutions["compl_H_graphs"].append(compl_H_graph)
+	# 		solutions["p"].append(p)
+
+	# 		indexed_solution_dict = {}
+	# 		for key in solutions.keys():
+	# 			if len(solutions[key]) > 0:
+	# 				indexed_solution_dict[key] = solutions[key][idx]
+	# 		self.save_instance_solution(indexed_solution_dict, idx)
+	# 	self.save_solutions(solutions)
+
 
 	def generate_graphs(self, p):
 		solutions = {
@@ -117,7 +202,13 @@ class RBDatasetGenerator(BaseDatasetGenerator):
 			"compl_H_graphs": [],
 			"p": []
 		}
+		path = "/home/chenhaojun/DIffUCO/draft/Data_for_solver.pkl"
+		# import pickle
+		# with open(path, 'rb') as f:
+		# 	graphs = pickle.load(f)
+		# num_graphs = len(graphs['overlap_id'])
 		for idx in tqdm(range(self.graph_config[f"n_{self.mode}"])):
+		# for idx in tqdm(range(num_graphs)):
 			while True:
 				if (not self.diff_ps):
 					#print("select new p", p)
@@ -130,7 +221,8 @@ class RBDatasetGenerator(BaseDatasetGenerator):
 				n = np.random.randint(self.graph_config["n_low"], self.graph_config["n_high"])
 				k = np.random.randint(self.graph_config["k_low"], self.graph_config["k_high"])
 				# ipdb.set_trace()
-				edges = generate_xu_instances.get_random_instance(n, k, p)
+				# edges = generate_xu_instances.get_random_instance(n, k, p)
+				edges = generate_ks_instances.get_random_instance(path=path, idx=idx)
 				g = ig.Graph([(edge[0], edge[1]) for edge in edges])
 				isolated_nodes = [v.index for v in g.vs if v.degree() == 0]
 				g.delete_vertices(isolated_nodes)
@@ -161,6 +253,3 @@ class RBDatasetGenerator(BaseDatasetGenerator):
 					indexed_solution_dict[key] = solutions[key][idx]
 			self.save_instance_solution(indexed_solution_dict, idx)
 		self.save_solutions(solutions)
-
-
-
