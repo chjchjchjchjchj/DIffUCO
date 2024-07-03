@@ -10,7 +10,8 @@ class MISEnergyClass(BaseEnergyClass):
         pass
 
     @partial(jax.jit, static_argnums=(0,))
-    def calculate_Energy(self, H_graph, bins, node_gr_idx, A = 1., B = 1.2):
+    # def calculate_Energy(self, H_graph, bins, node_gr_idx, A = 1., B = 1.2):
+    def calculate_Energy(self, H_graph, bins, node_gr_idx, A = 1., B = 1.01):
         '''
         This method assumes that no edge dublicates are contained in the graph
         :param H_graph:
