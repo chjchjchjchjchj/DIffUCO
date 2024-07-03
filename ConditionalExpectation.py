@@ -119,7 +119,7 @@ class ConditionalExpectation:
         self.config["N_basis_states"] = 1
         self.__init_wandb()
 
-        self.model = TrainMeanField(self.config, load_wandb_id = self.wandb_id, eval_step_factor = self.eval_step_factor)
+        self.model = TrainMeanField(self.config, load_wandb_id = self.wandb_id, eval_step_factor = self.eval_step_factor, visualize_MIS=True)
 
 
 
@@ -444,13 +444,17 @@ import argparse
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--wandb_id', default="kj0bihnz", type = str)
-parser.add_argument('--dataset', default="RB_iid_small", type = str)
-parser.add_argument('--GPU', default=7, type = int)
+parser.add_argument('--wandb_id', default="2jddqfp3", type = str)
+parser.add_argument('--dataset', default="RB_iid_100", type = str)
+parser.add_argument('--GPU', default=1, type = int)
 parser.add_argument('--evaluation_factor', default=3, type = int)
 parser.add_argument('--n_samples', default=8, type = int, help = "number of samples for each graph")
 
 args = parser.parse_args()
+# print(f"args={args}")
+# import sys; sys.exit()
+from argparse import Namespace
+args=Namespace(wandb_id='2jddqfp3', dataset='RB_iid_100', GPU=1, evaluation_factor=3, n_samples=8)
 
 if __name__ == "__main__":
 

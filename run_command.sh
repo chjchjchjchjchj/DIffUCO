@@ -31,6 +31,15 @@ python MIS_visualize.py --wandb_id z5xmvb6v --dataset KS_4 --GPU 7 --evaluation_
 # original paper
 
 # train
-python argparse_ray_main.py --lrs 0.002 --GPUs 1,2,3,4 --n_GNN_layers 8 --temps 0.6 --IsingMode RB_iid_100 --EnergyFunction MIS --N_anneal 2000  --n_diffusion_steps 3 --batch_size 20 --n_basis_states 10 --noise_potential bernoulli --project_name FirstRuns --seed 123 
+python argparse_ray_main.py --lrs 0.002 --GPUs 1,2,3,4 --n_GNN_layers 8 --temps 0.6 --IsingMode RB_iid_100 --EnergyFunction MIS --N_anneal 2000  --n_diffusion_steps 3 --batch_size 20 --n_basis_states 10 --noise_potential bernoulli --project_name RB_small --seed 123 
+
+
+
+
+
+
+
+
+
 
 

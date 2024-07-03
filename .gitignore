@@ -2,6 +2,8 @@ Checkpoints
 draft
 wandb
 DatasetCreator/loadGraphDatasets/DatasetSolutions
+MIS_vis.ipynb
+MIS_evaluate.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

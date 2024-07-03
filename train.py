@@ -45,7 +45,7 @@ def main():
     raise RuntimeError(exception)
 
 class TrainMeanField:
-	def __init__(self, config, load_wandb_id = None, eval_step_factor = 1):
+	def __init__(self, config, load_wandb_id = None, eval_step_factor = 1, visualize_MIS=False):
 		self.load_wandb_id = load_wandb_id
 		jax.config.update('jax_disable_jit', not config["jit"])
 
@@ -183,7 +183,7 @@ class TrainMeanField:
 
 		self.stop_epochs = self.config["stop_epochs"] # 800
 		self.epochs_since_best = 0
-
+		self.visualize_MIS = visualize_MIS
 		self.__init_Energy_functions()
 		self.__init_noise_distribution_class()
 		self.config.pop("vmapped_energy_loss_func")
@@ -809,6 +809,22 @@ class TrainMeanField:
 					wandb_log_dict[key] = []
 
 				wandb_log_dict[key].append(energy_dict[key])
+			if self.visualize_MIS:
+				from pathlib import Path
+				import pickle
+				save_path_dir = Path(os.getcwd()) / "Checkpoints"/ self.load_wandb_id / "visualization" / f"{iter}"
+				save_path_dir.mkdir(parents=True, exist_ok=True)
+				jgraph_save_path = save_path_dir / "jgraph.pkl"
+				solution_save_path = save_path_dir / "solution.pkl"
+				with open(jgraph_save_path, 'wb') as f:
+					pickle.dump(batch_dict['energy_graph'][0], f)
+					
+				with open(solution_save_path, 'wb') as f:
+					pickle.dump(log_dict['X_0'][..., 0, 1], f)
+			if iter > 10:
+				import sys
+				sys.exit()
+					
 
 		eval_log_dict = {
 			f"{mode}/epochs_since_best": self.epochs_since_best,
