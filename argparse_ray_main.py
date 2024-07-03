@@ -77,7 +77,7 @@ def meanfield_run():
     # print(f"args={args}")
     # import sys; sys.exit()
     # from argparse import Namespace
-    # args=Namespace(debug=False, multi_gpu=True, mode='Diffusion', EnergyFunction='MIS', IsingMode='RB_iid_100', graph_mode='normal', train_mode='REINFORCE', AnnealSchedule='linear', temps=[0.6], N_warmup=0, N_anneal=[2000], N_equil=0, lrs=[0.002], seed=[123], GPUs=['0'], n_hidden_neurons=[64], n_rand_nodes=2, stop_epochs=1000, n_diffusion_steps=[3], noise_potential=['bernoulli'], n_basis_states=[10], batch_size=[20], minib_diff_steps=3, minib_basis_states=10, inner_loop_steps=1, n_GNN_layers=[8], project_name='FirstRuns', beta_factor=[1.0], loss_alpha=0.0, MCMC_steps=0, mov_average=0.0009, mem_frac='.90', diff_schedule='DiffUCO', proj_method='None', linear_message_passing=True, relaxed=True, time_conditioning=True, deallocate=False, jit=True, mean_aggr=True, grad_clip=True, graph_norm=True, lr_schedule=False, CE=False)
+    # args=Namespace(debug=True, multi_gpu=True, mode='Diffusion', EnergyFunction='MIS', IsingMode='KS_iid_1000', graph_mode='normal', train_mode='REINFORCE', AnnealSchedule='linear', temps=[0.6], N_warmup=0, N_anneal=[2000], N_equil=0, lrs=[0.002], seed=[123], GPUs=['0'], n_hidden_neurons=[64], n_rand_nodes=2, stop_epochs=1000, n_diffusion_steps=[3], noise_potential=['bernoulli'], n_basis_states=[10], batch_size=[3], minib_diff_steps=3, minib_basis_states=10, inner_loop_steps=1, n_GNN_layers=[8], project_name='one_gpu', beta_factor=[1.0], loss_alpha=0.0, MCMC_steps=0, mov_average=0.0009, mem_frac='.90', diff_schedule='DiffUCO', proj_method='None', linear_message_passing=True, relaxed=True, time_conditioning=True, deallocate=False, jit=True, mean_aggr=True, grad_clip=True, graph_norm=True, lr_schedule=False, CE=False)
     resources_per_trial = 1.
     devices = args.GPUs
     n_workers = int(len(devices)/resources_per_trial)
@@ -292,7 +292,7 @@ def run( flexible_config, overwrite = True):
         pass
         os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"] = "platform"
 
-    train = TrainMeanField(config)
+    train = TrainMeanField(config=config, load_wandb_id=None, eval_step_factor=1)
 
     train.train()
 

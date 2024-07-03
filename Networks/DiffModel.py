@@ -100,11 +100,11 @@ class DiffModel(nn.Module):
 		rand_nodes, key = self.reinit_rand_nodes(X_prev, key)
 		out_dict, key = self.apply(params, jraph_graph_list, X_prev, rand_nodes, t_idx, key)
 
-		spin_logits = out_dict["spin_logits"]
+		spin_logits = out_dict["spin_logits"] # spin_logits.shape=(all_nodes, 1, 2)
 
 		node_graph_idx, n_graph, n_node = self.get_graph_info(jraph_graph_list)
 
-		X_next, spin_log_probs, key = self.sample_from_model( spin_logits, key)
+		X_next, spin_log_probs, key = self.sample_from_model(spin_logits, key) # (all_nodes, 1), (all_nodes, 1, 2), key
 		#print(X_next.shape, X_next, jnp.exp(spin_log_probs))
 		graph_log_prob = jax.lax.stop_gradient(jnp.exp((self.__get_log_prob(spin_log_probs[...,0], node_graph_idx, n_graph)/(n_node))[:-1]))
 		out_dict["X_next"] = X_next
@@ -215,14 +215,14 @@ class DiffModel(nn.Module):
 		shape = (nodes.shape[0], N_basis_states, 1)
 
 		key, subkey = jax.random.split(key)
-		log_p_uniform = self._get_prior(shape)
+		log_p_uniform = self._get_prior(shape) # 形状为 shape 的 log (1 / 伯努利特征数量)
 
 		X_prev = jax.random.categorical(key=subkey,
 										logits=log_p_uniform,
 										axis=-1,
-										shape=log_p_uniform.shape[:-1])
+										shape=log_p_uniform.shape[:-1]) # (all_nodes, basis_states, 1)
 
-		one_hot_state = jax.nn.one_hot(X_prev, num_classes=self.n_bernoulli_features)
+		one_hot_state = jax.nn.one_hot(X_prev, num_classes=self.n_bernoulli_features) # (all_nodes, basis_states, 1, 2)
 		return X_prev, one_hot_state, log_p_uniform, key
 
 	@partial(flax.linen.jit, static_argnums=(0,2))

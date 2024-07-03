@@ -19,11 +19,12 @@ parser.add_argument('--seed', default=[123], type = int, help='Define dataset se
 parser.add_argument('--parent', default=False, type = bool, help='use parent directory or not')
 parser.add_argument('--save', default=False, type = bool, help='save the entire dataset in a pickle file or not')
 parser.add_argument('--gurobi_solve', default=True, type = bool, help='whether to solve instances with gurobi or not')
-parser.add_argument('--datasets', default=['Gset'], choices = dataset_choices, help='Define the dataset', nargs="+")
+parser.add_argument('--datasets_name', default=['KS_3'], choices = dataset_choices, help='Define the dataset', nargs="+")
 parser.add_argument('--diff_ps', default=False, type = bool, help='')
 parser.add_argument('--problems', default=['MaxCut'], choices = ["MIS", "MVC", "MaxCl", "MaxCut", "MDS", "TSP"], help='Define the CO problem', nargs="+")
 parser.add_argument('--modes', default=[ "test", "train", "val"], type = str, help='Define dataset split', nargs = "+")
 parser.add_argument('--time_limits', default=["inf", "0.1", "1."], type = str, help='Gurobi Time Limit for each [mode]', nargs = "+")
+parser.add_argument('--datasets_path', default="draft/Data_for_solver_3.pkl", type = str, help='datasets path')
 #parser.add_argument('--n_graphs', default=[100, 10, 10], type = int, help='Number of graphs for each [mode]', nargs = "+")
 args = parser.parse_args()
 
@@ -55,7 +56,7 @@ if __name__ == "__main__":
 	# args=Namespace(licence_path='/system/user/sanokows/', seed=[123], parent=False, save=False, gurobi_solve=True, datasets=['RB_iid_100'], diff_ps=False, problems=['MIS'], modes=['test', 'train', 'val'], time_limits=['inf', '0.1', '1.'])
 	
 
-	for dataset in args.datasets:
+	for dataset in args.datasets_name:
 		for problem in args.problems:
 			for seed in args.seed:
 				base_config = {
@@ -69,6 +70,7 @@ if __name__ == "__main__":
 					"problem": problem,
 					"time_limit": None,
 					"n_graphs": None,
+					"datasets_path": args.datasets_path,
 				}
 				print(f"base_config={base_config}")
 				create_dataset(base_config, args.modes, args.time_limits)

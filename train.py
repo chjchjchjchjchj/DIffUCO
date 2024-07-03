@@ -61,8 +61,8 @@ class TrainMeanField:
 		# if epoch % save_modulo == 0 the params will be saved
 		self.save_modulo = 50
 
-		self.dataset_name = self.config["dataset_name"]
-		self.problem_name = self.config["problem_name"]
+		self.dataset_name = self.config["dataset_name"] # RB_iid_small
+		self.problem_name = self.config["problem_name"] # MIS
 
 		if(self.problem_name == "TSP"):
 			self.pad_k = 1.
@@ -76,28 +76,28 @@ class TrainMeanField:
 
 		print("pad_k is", self.pad_k)
 
-		self.epochs = self.config["N_warmup"] + self.config["N_anneal"] + self.config["N_equil"]
+		self.epochs = self.config["N_warmup"] + self.config["N_anneal"] + self.config["N_equil"] # 0 + 2000 + 0
 		self.config["epochs"] = self.epochs
 
 		self.lr = self.config["lr"]
-		self.N_basis_states = self.config["N_basis_states"]
-		self.batch_size = self.config["batch_size"]
-		self.random_node_features = self.config["random_node_features"]
-		self.n_random_node_features = self.config["n_random_node_features"]
+		self.N_basis_states = self.config["N_basis_states"] # 30
+		self.batch_size = self.config["batch_size"] # 30
+		self.random_node_features = self.config["random_node_features"] # True
+		self.n_random_node_features = self.config["n_random_node_features"] # 5
 
-		self.relaxed = self.config["relaxed"]
+		self.relaxed = self.config["relaxed"] # True
 
-		self.T_max = self.config["T_max"]
-		self.T = self.T_max
-		self.N_warmup = self.config["N_warmup"]
-		self.N_anneal = self.config["N_anneal"]
-		self.N_equil = self.config["N_equil"]
-		self.loss_alpha = self.config["loss_alpha"]
-		self.MCMC_steps = self.config["MCMC_steps"]
+		self.T_max = self.config["T_max"] # 0.05
+		self.T = self.T_max # 0.05
+		self.N_warmup = self.config["N_warmup"] # 0
+		self.N_anneal = self.config["N_anneal"] # 2
+		self.N_equil = self.config["N_equil"] # 0
+		self.loss_alpha = self.config["loss_alpha"] # 0.0
+		self.MCMC_steps = self.config["MCMC_steps"] # 0
 
-		self.n_diffusion_steps = self.config["n_diffusion_steps"]
-		self.mode = self.config["mode"]
-		self.beta_factor = self.config["beta_factor"]
+		self.n_diffusion_steps = self.config["n_diffusion_steps"] # 1
+		self.mode = self.config["mode"] # diffusion
+		self.beta_factor = self.config["beta_factor"] # 0.1
 
 		# Network
 
@@ -118,19 +118,19 @@ class TrainMeanField:
 			self.config["n_features_list_prob"] = [120,64,2]
 
 		self.n_features_list_prob = self.config["n_features_list_prob"]
-		self.config["n_bernoulli_features"] = self.n_bernoulli_features
+		self.config["n_bernoulli_features"] = self.n_bernoulli_features # 2
 
-		self.n_features_list_nodes = self.config["n_features_list_nodes"]
-		self.n_features_list_edges = self.config["n_features_list_edges"]
-		self.n_features_list_messages = self.config["n_features_list_messages"]
-		self.n_features_list_encode = self.config["n_features_list_encode"]
-		self.n_features_list_decode = self.config["n_features_list_decode"]
-		self.n_message_passes = self.config["n_message_passes"]
-		self.message_passing_weight_tied = self.config["message_passing_weight_tied"]
-		self.linear_message_passing = self.config["linear_message_passing"]
+		self.n_features_list_nodes = self.config["n_features_list_nodes"] # [64, 64]
+		self.n_features_list_edges = self.config["n_features_list_edges"] # [10]
+		self.n_features_list_messages = self.config["n_features_list_messages"] # [64, 64]
+		self.n_features_list_encode = self.config["n_features_list_encode"] # [30]
+		self.n_features_list_decode = self.config["n_features_list_decode"] # [64]
+		self.n_message_passes = self.config["n_message_passes"] # [2]
+		self.message_passing_weight_tied = self.config["message_passing_weight_tied"] # False
+		self.linear_message_passing = self.config["linear_message_passing"] # True
 
 		if("edge_updates" in self.config.keys()):
-			self.edge_updates = self.config["edge_updates"]
+			self.edge_updates = self.config["edge_updates"] # F
 		else:
 			self.edge_updates = True
 
@@ -181,7 +181,7 @@ class TrainMeanField:
 		self.best_rel_error = float('inf')
 		self.best_energy = float("inf")
 
-		self.stop_epochs = self.config["stop_epochs"]
+		self.stop_epochs = self.config["stop_epochs"] # 800
 		self.epochs_since_best = 0
 
 		self.__init_Energy_functions()
@@ -754,6 +754,7 @@ class TrainMeanField:
 		save_metrics_at_epoch["eval/energy"] = []
 		save_metrics_at_epoch["eval/gt_energy"] = []
 		save_metrics_at_epoch["eval/rel_error"] = []
+		save_metrics_at_epoch["eval/MIS_size"] = []
 
 		time_list = []
 

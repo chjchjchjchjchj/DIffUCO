@@ -12,7 +12,7 @@ noise_distribution_registry = {"MIS": MISEnergyClass, "MVC": MVCEnergyClass, "Ma
 
 def get_Energy_class(config):
 
-    noise_distr_str = config["problem_name"]
+    noise_distr_str = config["problem_name"] # MIS
 
     if(noise_distr_str in noise_distribution_registry.keys()):
         Energy_class = noise_distribution_registry[noise_distr_str]

@@ -138,11 +138,18 @@ class Base(ABC):
 
     @partial(jax.jit, static_argnums=(0,))
     def _compute_aggr_utils(self, jraph_graph):
-        nodes = jraph_graph.nodes
-        n_node = jraph_graph.n_node
-        n_graph = jax.tree_util.tree_leaves(n_node)[0].shape[0]
-        graph_idx = jnp.arange(n_graph)
-        total_num_nodes = jax.tree_util.tree_leaves(nodes)[0].shape[0]
+        """
+        比如一共有三个图
+        graph_idx = [0, 1, 2]
+        n_node = [3, 5, 2]
+        total_num_nodes = [10]
+        node_graph_idx = [0, 0, 0, 1, 1, 1, 1, 1, 2, 2]
+        """
+        nodes = jraph_graph.nodes # 所有图中节点的总和
+        n_node = jraph_graph.n_node # 每个子图中节点的个数
+        n_graph = jax.tree_util.tree_leaves(n_node)[0].shape[0] # 图的个数
+        graph_idx = jnp.arange(n_graph) # 每个图的索引
+        total_num_nodes = jax.tree_util.tree_leaves(nodes)[0].shape[0] 
         node_graph_idx = jnp.repeat(graph_idx, n_node, axis=0, total_repeat_length=total_num_nodes)
         return node_graph_idx, n_graph, total_num_nodes
 

@@ -121,7 +121,7 @@ class Reinforce(Base):
                                                                             key)
 
         spin_logits_prev = log_p_uniform
-        spin_log_probs_prev = jnp.sum(spin_logits_prev * one_hot_state, axis=-1)
+        spin_log_probs_prev = jnp.sum(spin_logits_prev * one_hot_state, axis=-1) # (all_nodes, n_basis_states, 1)
 
         L_entropy = 0.
         L_noise = 0.
@@ -134,16 +134,16 @@ class Reinforce(Base):
         L_entropy_repara = 0.
 
         log_p_prev_per_node = jnp.zeros(
-            (overall_diffusion_steps + 1, X_prev.shape[0], X_prev.shape[1], self.n_bernoulli_features))
+            (overall_diffusion_steps + 1, X_prev.shape[0], X_prev.shape[1], self.n_bernoulli_features)) # (overall_diffusion_steps + 1, all_nodes, n_basis_states, 2)
         Xs_over_different_steps = jnp.zeros(
-            (overall_diffusion_steps + 1, X_prev.shape[0], X_prev.shape[1], self.n_bernoulli_features))
-        prob_over_diff_steps = jnp.zeros((overall_diffusion_steps + 1,))
-        Noise_loss_over_diff_steps = jnp.zeros((overall_diffusion_steps,))
-        Energy_over_diff_steps = jnp.zeros((overall_diffusion_steps,))
+            (overall_diffusion_steps + 1, X_prev.shape[0], X_prev.shape[1], self.n_bernoulli_features)) # (overall_diffusion_steps + 1, all_nodes, n_basis_states, 2)
+        prob_over_diff_steps = jnp.zeros((overall_diffusion_steps + 1,)) # (overall_diffusion_steps + 1, )
+        Noise_loss_over_diff_steps = jnp.zeros((overall_diffusion_steps,)) # (overall_diffusion_steps + 1, )
+        Energy_over_diff_steps = jnp.zeros((overall_diffusion_steps,)) # (overall_diffusion_steps + 1, )
         n_graphs = energy_graph_batch.n_node.shape[0]
-        log_p_0_T = jnp.zeros((overall_diffusion_steps + 1, n_graphs -1, X_prev.shape[1]))
+        log_p_0_T = jnp.zeros((overall_diffusion_steps + 1, n_graphs -1, X_prev.shape[1])) # (overall_diffusion_steps + 1, n_graphs -1, n_basis_states)
 
-        prob_over_diff_steps = prob_over_diff_steps.at[0].set(0.5)
+        prob_over_diff_steps = prob_over_diff_steps.at[0].set(0.5) # 将第一个元素设置为0.5
         log_p_prev_per_node = log_p_prev_per_node.at[0].set(spin_log_probs_prev)
         Xs_over_different_steps = Xs_over_different_steps.at[0].set(X_prev)
 
@@ -162,7 +162,7 @@ class Reinforce(Base):
             X_next = out_dict["X_next"]
             spin_log_probs = out_dict["spin_log_probs"]
             spin_logits_next = out_dict["spin_logits"]
-            graph_log_prob = out_dict["graph_log_prob"]
+            graph_log_prob = out_dict["graph_log_prob"] 
 
             log_p_t = self.NoiseDistrClass.get_log_p_T_0(energy_graph_batch, X_prev, X_next, model_step_idx, T)
             log_p_0_T = log_p_0_T.at[i].set(log_p_t[:-1])

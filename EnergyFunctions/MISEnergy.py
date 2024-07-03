@@ -25,7 +25,7 @@ class MISEnergyClass(BaseEnergyClass):
         nodes = H_graph.nodes
         total_num_nodes = jax.tree_util.tree_leaves(nodes)[0].shape[0]
 
-        raveled_bins = jnp.reshape(bins, (bins.shape[0], 1))
+        raveled_bins = jnp.reshape(bins, (bins.shape[0], 1)) # (all_nodes, 1)
         Energy_messages = (raveled_bins[H_graph.senders]) * (raveled_bins[H_graph.receivers])
 
         # print("Energy_per_graph", Energy.shape)
