@@ -13,6 +13,7 @@ import pickle
 import numpy as np
 from pathlib import Path
 from DatasetCreator.Gurobi import GurobiSolver
+from DatasetCreator.PuLP import PuLPSolver
 from DatasetCreator.jraph_utils import utils as jutils
 from .save_utils import save_indexed_dict
 
@@ -47,6 +48,7 @@ class BaseDatasetGenerator(ABC):
 		self.gurobi_solve = config["gurobi_solve"]
 		self.licence_base_path = config["licence_base_path"]
 		self.time_limit = config["time_limit"]
+		self.pulp_solve = config["pulp_solve"]
 
 		# set path
 		p = Path(os.getcwd())
@@ -80,6 +82,11 @@ class BaseDatasetGenerator(ABC):
 		else:
 			warnings.warn("Gurobi will not be used to solve the dataset which might lead to wrong solutions for the dataset!")
 
+		if self.pulp_solve:
+			print("Use PuLP to solve!!!!!!!!!!!!!!!!!!!!!")
+		else:
+			warnings.warn("PuLP will not be used to solve the dataset which might lead to wrong solutions for the dataset!")
+
 	@abstractmethod
 	def generate_dataset(self):
 		"""
@@ -91,7 +98,7 @@ class BaseDatasetGenerator(ABC):
 		"""
 		raise NotImplementedError("generate_graph method not implemented")
 
-	def solve_graph(self, H_graph, g) -> (float, float, list, float, jraph.GraphsTuple):
+	def solve_graph(self, H_graph, g, thread_fraction) -> (float, float, list, float, jraph.GraphsTuple):
 		"""
 		Solve the graph instance for the dataset using gurobi if self.gurobi_solve is True, otherwise return None Tuple
 
@@ -108,7 +115,7 @@ class BaseDatasetGenerator(ABC):
 				return Energy, boundEnergy, solution, runtime, H_graph_compl
 
 			elif self.problem == "MDS":
-				_, Energy, solution, runtime = GurobiSolver.solveMDS_as_MIP(H_graph, time_limit=self.time_limit)
+				_, Energy, solution, runtime = GurobiSolver.solveMDS_as_MIP(H_graph, time_limit=self.time_limit, thread_fraction=thread_fraction)
 				boundEnergy = Energy
 				return Energy, boundEnergy, solution, runtime, None
 
@@ -129,6 +136,14 @@ class BaseDatasetGenerator(ABC):
 
 			else:
 				raise NotImplementedError(f"Problem {self.problem} is not implemented. Choose from [MaxCut, MDS]")
+		elif self.pulp_solve:
+			if self.problem == "MIS":
+				H_graph_compl = jutils.from_igraph_to_jgraph(g, double_edges=False)
+				_, Energy, solution, runtime = PuLPSolver.solveMIS_as_MIP(H_graph, time_limit=self.time_limit)
+				return Energy, None, solution, runtime, H_graph_compl
+			else:
+				raise NotImplementedError(f"Problem {self.problem} is not implemented. Choose from [MIS]")
+			
 		else:
 			# in case gurobi is not used, arbitrary values are returned and for MaxCl, the complement graph is returned
 			Energy = 0.

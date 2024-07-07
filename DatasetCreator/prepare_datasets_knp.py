@@ -19,12 +19,20 @@ parser.add_argument('--seed', default=[123], type = int, help='Define dataset se
 parser.add_argument('--parent', default=False, type = bool, help='use parent directory or not')
 parser.add_argument('--save', default=False, type = bool, help='save the entire dataset in a pickle file or not')
 parser.add_argument('--gurobi_solve', default=True, type = bool, help='whether to solve instances with gurobi or not')
+parser.add_argument('--pulp_solve', default=False, type = bool, help='whether to solve instances with gulp or not')
 parser.add_argument('--datasets_name', default=['KS_3'], choices = dataset_choices, help='Define the dataset', nargs="+")
 parser.add_argument('--diff_ps', default=False, type = bool, help='')
 parser.add_argument('--problems', default=['MaxCut'], choices = ["MIS", "MVC", "MaxCl", "MaxCut", "MDS", "TSP"], help='Define the CO problem', nargs="+")
 parser.add_argument('--modes', default=[ "test", "train", "val"], type = str, help='Define dataset split', nargs = "+")
+# parser.add_argument('--modes', default=["test"], type = str, help='Define dataset split', nargs = "+")
 parser.add_argument('--time_limits', default=["inf", "0.1", "1."], type = str, help='Gurobi Time Limit for each [mode]', nargs = "+")
+# parser.add_argument('--time_limits', default=["inf"], type = str, help='Gurobi Time Limit for each [mode]', nargs = "+")
 parser.add_argument('--datasets_path', default="draft/Data_for_solver_3.pkl", type = str, help='datasets path')
+parser.add_argument('--uniform_generate_data', default=False, type = bool, help='uniformly generate data')
+parser.add_argument('--dim', default=3, type = int, help='generate ndim graphs')
+parser.add_argument('--num_samples', default=1000, type = int, help='the number of nodes of generated graphs')
+parser.add_argument('--GPUs', default=["6"], type = str, help='Define Nb', nargs = "+")
+parser.add_argument('--thread_fraction', default=0.5, type = float)
 #parser.add_argument('--n_graphs', default=[100, 10, 10], type = int, help='Number of graphs for each [mode]', nargs = "+")
 args = parser.parse_args()
 
@@ -48,6 +56,33 @@ def create_dataset(config: dict, modes: list, time_limits: list):
 		dataset_generator = get_dataset_generator(config)
 		dataset_generator.generate_dataset()
 
+devices = args.GPUs
+
+device_str = ""
+for idx, device in enumerate(devices):
+    if (idx != len(devices) - 1):
+        device_str += str(devices[idx]) + ","
+    else:
+        device_str += str(devices[idx])
+
+print(device_str)
+
+if(len(args.GPUs) > 1):
+    device_str = ""
+    for idx, device in enumerate(devices):
+        if (idx != len(devices) - 1):
+            device_str += str(devices[idx]) + ","
+        else:
+            device_str += str(devices[idx])
+
+    print(device_str, type(device_str))
+else:
+    device_str = str(args.GPUs[0])
+
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = device_str
+print(f"device_str={device_str}")
+
 
 if __name__ == "__main__":
 	# print(f"args={args}")
@@ -65,12 +100,17 @@ if __name__ == "__main__":
 					"parent": args.parent,
 					"save": args.save,
 					"gurobi_solve": args.gurobi_solve,
+					"pulp_solve": args.pulp_solve,
 					"diff_ps": args.diff_ps,
 					"dataset_name": dataset,
 					"problem": problem,
 					"time_limit": None,
 					"n_graphs": None,
 					"datasets_path": args.datasets_path,
+					'uniform_generate_data': args.uniform_generate_data,
+					'dim': args.dim,
+					'num_samples': args.num_samples,
+                    'thread_fraction': args.thread_fraction,
 				}
 				print(f"base_config={base_config}")
 				create_dataset(base_config, args.modes, args.time_limits)

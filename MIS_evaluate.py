@@ -20,11 +20,11 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 
 class ConditionalExpectation:
-    def __init__(self, wandb_id, n_different_random_node_features, k = 1, load_best_network = True, eval_step_factor = 2, project_name = ""):
+    def __init__(self, wandb_id, n_different_random_node_features, k = 1, load_best_network = True, eval_step_factor = 2, project_name = "", dataset = None):
         self.eval_step_factor = eval_step_factor
         self.load_best_network = load_best_network
         self.project_name = project_name
-
+        self.dataset = dataset
         self.wandb_id = wandb_id
         self.wandb_id_CE = wandb.util.generate_id()
 
@@ -89,12 +89,15 @@ class ConditionalExpectation:
         print("loaded", jax.tree_map(lambda x: x.shape, self.params))
         self.params = jax.tree_map(lambda x: x[0], self.params)
         self.params = jax.device_put_replicated(self.params, list(jax.devices()))
+        if self.dataset is not None:
+            self.config["dataset_name"] = self.dataset
 
         print(f"wandb ID: {self.wandb_id}\nDataset: {self.config['dataset_name']} | Problem: {self.config['problem_name']}")
         self.path_dataset = self.config['dataset_name']
 
         self.dataset_name = self.config["dataset_name"]
         self.problem_name = self.config["problem_name"]
+        
 
         # self.batch_size = 32
         self.batch_size = 1
@@ -119,7 +122,7 @@ class ConditionalExpectation:
         self.config["N_basis_states"] = 1
         self.__init_wandb()
 
-        self.model = TrainMeanField(self.config, load_wandb_id = self.wandb_id, eval_step_factor = self.eval_step_factor, visualize_MIS=True)
+        self.model = TrainMeanField(self.config, load_wandb_id = self.wandb_id, eval_step_factor = self.eval_step_factor, visualize_MIS=True, evaluate_dataset=self.config["dataset_name"])
 
 
 
@@ -435,7 +438,7 @@ class ConditionalExpectation:
 
 
 def eval_on_dataset(config):
-    CE = ConditionalExpectation(wandb_id=config["wandb_id"], n_different_random_node_features=config["n_samples"], k=1, eval_step_factor=config["evaluation_factor"])
+    CE = ConditionalExpectation(wandb_id=config["wandb_id"], n_different_random_node_features=config["n_samples"], k=1, eval_step_factor=config["evaluation_factor"], dataset=config['dataset'])
     # CE.init_dataset(dataset_name=f"RB_iid_200_p_{p}", mode="test")
     test_log_dict = CE.run(p=None, dataset_name=config["dataset"], mode="test")
 
@@ -444,17 +447,17 @@ import argparse
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--wandb_id', default="2jddqfp3", type = str)
-parser.add_argument('--dataset', default="RB_iid_100", type = str)
-parser.add_argument('--GPU', default=1, type = int)
+parser.add_argument('--wandb_id', default="z5xmvb6v", type = str)
+parser.add_argument('--dataset', default="KS_4_100", type = str)
+parser.add_argument('--GPU', default=7, type = int)
 parser.add_argument('--evaluation_factor', default=3, type = int)
-parser.add_argument('--n_samples', default=8, type = int, help = "number of samples for each graph")
+parser.add_argument('--n_samples', default=1, type = int, help = "number of samples for each graph")
 
 args = parser.parse_args()
+# from argparse import Namespace
+# args=Namespace(wandb_id='z5xmvb6v', dataset='KS_4_1000', GPU=7, evaluation_factor=3, n_samples=8)
 # print(f"args={args}")
 # import sys; sys.exit()
-# from argparse import Namespace
-# args=Namespace(wandb_id='2jddqfp3', dataset='RB_iid_100', GPU=1, evaluation_factor=3, n_samples=8)
 
 if __name__ == "__main__":
 
@@ -472,12 +475,4 @@ if __name__ == "__main__":
     }
 
     eval_on_dataset(config)
-
-
-
-
-
-
-
-
 

@@ -26,9 +26,16 @@ class KSDatasetGenerator(BaseDatasetGenerator):
 		self.graph_config = self.__init_graph_config(self.dataset_name)
 		print(f'\nGenerating RB {self.mode} dataset "{self.dataset_name}" with {self.graph_config[f"n_{self.mode}"]} instances!\n')
 		self.load_graph_path = config["datasets_path"]
-		with open(self.load_graph_path, 'rb') as f:
-			self.loaded_graphs = pickle.load(f)
-		print(f"loading datasets from {self.load_graph_path}")
+		self.uniform_generate_data = config['uniform_generate_data']
+		self.dim = config['dim']
+		self.num_samples = config['num_samples']
+		self.thread_fraction = config['thread_fraction']
+		if self.uniform_generate_data:
+			print(f"generate {self.dim} dimension {self.num_samples} nodes graphs, thread_fraction is {self.thread_fraction}!!!!!!!!!!!!!")
+		if not self.uniform_generate_data:
+			with open(self.load_graph_path, 'rb') as f:
+				self.loaded_graphs = pickle.load(f)
+				print(f"loading datasets from {self.load_graph_path}")
 
 	def __init_graph_config(self, dataset_name):
 		"""
@@ -118,8 +125,18 @@ class KSDatasetGenerator(BaseDatasetGenerator):
 				"n_train": 3000, "n_val": 500, "n_test": 500
 				# "n_train": 30, "n_val": 5, "n_test": 5
 			}
+		elif "KS_5" in dataset_name:
+			self.size = "1000"
+			graph_config = {
+				"p_low": 0.25, "p_high": 1,
+				"n_min": 0, "n_max": np.inf,
+				"n_low": 60, "n_high": 70,
+				"k_low": 15, "k_high": 20,
+				"n_train": 3000, "n_val": 500, "n_test": 500
+				# "n_train": 30, "n_val": 5, "n_test": 5
+			}
 		else:
-			raise NotImplementedError('Dataset name must contain either "small", "large", "huge", "giant", "100", "200", "KS_3", "KS_4" to infer the number of nodes')
+			raise NotImplementedError('Dataset name must contain either "small", "large", "huge", "giant", "100", "200", "KS_3", "KS_4", "KS_5" to infer the number of nodes')
 		return graph_config
 
 	# def generate_dataset(self):
@@ -144,7 +161,8 @@ class KSDatasetGenerator(BaseDatasetGenerator):
 				self.graph_config["n_test"] = 100
 			else:
 				# self.dataset_name = f"KS_iid_{self.size}"
-				self.dataset_name = f"{self.dataset_name}_{self.size}"
+				# self.dataset_name = f"{self.dataset_name}_{self.size}"
+				self.dataset_name = f"{self.dataset_name}_{self.num_samples}"
 			self.generate_graphs(p)
 
 	def generate_graphs(self, p):
@@ -182,8 +200,9 @@ class KSDatasetGenerator(BaseDatasetGenerator):
 				elif self.mode == "test":
 					selected_idx = self.graph_config["n_train"] + self.graph_config["n_val"] + idx
 				
-				# edges = generate_ks_instances.get_random_instance(path=path, idx=selected_idx)
-				edges = Counter(self.loaded_graphs['overlap_id'][selected_idx])
+				if self.uniform_generate_data:
+					edges, coordinate = generate_ks_instances.get_random_instance(dim=self.dim, num_samples=self.num_samples)
+				else: edges = Counter(self.loaded_graphs['overlap_id'][selected_idx])
 				g = ig.Graph([(edge[0], edge[1]) for edge in edges])
 				# isolated_nodes = [v.index for v in g.vs if v.degree() == 0]
 				# g.delete_vertices(isolated_nodes)
@@ -191,7 +210,7 @@ class KSDatasetGenerator(BaseDatasetGenerator):
 				if min_n <= num_nodes <= max_n:
 					break
 			H_graph, density, graph_size = self.igraph_to_jraph(g)
-			Energy, boundEnergy, solution, runtime, compl_H_graph = self.solve_graph(H_graph,g)
+			Energy, boundEnergy, solution, runtime, compl_H_graph = self.solve_graph(H_graph,g, thread_fraction=self.thread_fraction)
 
 			if not self.gurobi_solve:
 				if self.problem == "MaxCl" or self.problem == "MIS":
@@ -206,7 +225,10 @@ class KSDatasetGenerator(BaseDatasetGenerator):
 			solutions["upperBoundEnergies"].append(boundEnergy)
 			solutions["compl_H_graphs"].append(compl_H_graph)
 			solutions["p"].append(p)
-			solutions["coordinate"].append(self.loaded_graphs['unit_vectors'][selected_idx])
+			if not self.uniform_generate_data:
+				solutions["coordinate"].append(self.loaded_graphs['unit_vectors'][selected_idx])
+			else:
+				solutions["coordinate"].append(coordinate)
 
 			indexed_solution_dict = {}
 			for key in solutions.keys():

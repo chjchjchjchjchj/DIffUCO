@@ -28,7 +28,7 @@ from utils import dict_count
 import os
 
 import warnings
-
+import ipdb
 # def my_formatwarning(message, category, filename, lineno, line=None):
 #   print(message, category)
 #   # lineno is the line number you are looking for
@@ -45,7 +45,7 @@ def main():
     raise RuntimeError(exception)
 
 class TrainMeanField:
-	def __init__(self, config, load_wandb_id = None, eval_step_factor = 1, visualize_MIS=False):
+	def __init__(self, config, load_wandb_id = None, eval_step_factor = 1, visualize_MIS=False, evaluate_dataset=None):
 		self.load_wandb_id = load_wandb_id
 		jax.config.update('jax_disable_jit', not config["jit"])
 
@@ -53,6 +53,8 @@ class TrainMeanField:
 
 		self.config = self._init_config(config)
 		self.config["eval_step_factor"] = eval_step_factor
+		if evaluate_dataset is not None:
+			self.config["dataset_name"] = evaluate_dataset
 		print(self.config)
 
 		self.seed = self.config["seed"]
@@ -337,6 +339,14 @@ class TrainMeanField:
 
 			input_graph_list = {"graphs": [jax.tree_util.tree_map(lambda x: x[0], input_graph_list["graphs"][0])]}
 			self.params = self.model.init({"params": subkey}, input_graph_list, X_prev, rand_node_features, 0, subkey)
+			print(self.params)
+			# 计算模型参数数量
+			param_count = sum(x.size for x in jax.tree_util.tree_leaves(self.params))
+			print(f"模型参数数量: {param_count}")
+
+			# 计算模型大小
+			param_size = sum(x.size * x.dtype.itemsize for x in jax.tree_util.tree_leaves(self.params))
+			print(f"模型大小: {param_size / 1024 / 1024:.2f} MB")
 
 		elif(self.graph_mode == "U_net"):
 			reps = 10
@@ -812,7 +822,9 @@ class TrainMeanField:
 			if self.visualize_MIS:
 				from pathlib import Path
 				import pickle
-				save_path_dir = Path(os.getcwd()) / "Checkpoints"/ self.load_wandb_id / "visualization" / f"{iter}"
+				dataset_name = self.config["dataset_name"]
+				# import ipdb; ipdb.set_trace()
+				save_path_dir = Path(os.getcwd()) / "Checkpoints"/ self.load_wandb_id / f"visualization_{dataset_name}" / f"{iter}"
 				save_path_dir.mkdir(parents=True, exist_ok=True)
 				jgraph_save_path = save_path_dir / "jgraph.pkl"
 				solution_save_path = save_path_dir / "solution.pkl"
@@ -821,6 +833,7 @@ class TrainMeanField:
 					
 				with open(solution_save_path, 'wb') as f:
 					pickle.dump(log_dict['X_0'][..., 0, 1], f)
+					print(f"save solution in {solution_save_path}")
 			if iter > 10:
 				import sys
 				sys.exit()
