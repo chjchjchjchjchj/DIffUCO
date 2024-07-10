@@ -92,7 +92,7 @@ def solveMVC_as_MIP(H_graph, time_limit = float("inf"), num_CPUs = None, thread_
 ### TODO add version for weighted MIS
 def solveMIS_as_MIP(H_graph,  time_limit = float("inf"), thread_fraction = 0.5, num_CPUs = None):
 
-    num_nodes = H_graph.nodes.shape[0]
+    num_nodes = H_graph.nodes.shape[0]               
     m = g.Model("mip1")
     m.setParam("OutputFlag", 0)
     m.setParam("TimeLimit", time_limit)

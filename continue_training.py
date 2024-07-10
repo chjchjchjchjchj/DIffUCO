@@ -7,6 +7,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--wandb_id', default = "",type = str, help='Switch ray into local mode for debugging')
 parser.add_argument('--GPUs', default=["0"], type = str, help='Define Nb', nargs = "+")
 parser.add_argument('--memory', default=0.92, type = float, help="GPU memory")
+parser.add_argument('--continue_dataset', default="KS_3_1000", type = str)
 
 ### TODO add gradient clipping?
 args = parser.parse_args()
@@ -44,7 +45,8 @@ def meanfield_run():
     os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = str(args.memory)
     #os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"] = "platform"
     config = {"jit": True}
-    train = TrainMeanField(config, load_wandb_id=args.wandb_id)
+    continue_dataset = args.continue_dataset
+    train = TrainMeanField(config, load_wandb_id=args.wandb_id, continue_dataset=continue_dataset)
 
     train.train()
 

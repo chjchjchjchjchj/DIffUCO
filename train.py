@@ -45,7 +45,7 @@ def main():
     raise RuntimeError(exception)
 
 class TrainMeanField:
-	def __init__(self, config, load_wandb_id = None, eval_step_factor = 1, visualize_MIS=False, evaluate_dataset=None):
+	def __init__(self, config, load_wandb_id = None, eval_step_factor = 1, visualize_MIS=False, evaluate_dataset=None, continue_dataset=None):
 		self.load_wandb_id = load_wandb_id
 		jax.config.update('jax_disable_jit', not config["jit"])
 
@@ -55,6 +55,8 @@ class TrainMeanField:
 		self.config["eval_step_factor"] = eval_step_factor
 		if evaluate_dataset is not None:
 			self.config["dataset_name"] = evaluate_dataset
+		elif continue_dataset is not None:
+			self.config["dataset_name"] = continue_dataset
 		print(self.config)
 
 		self.seed = self.config["seed"]
@@ -68,7 +70,7 @@ class TrainMeanField:
 
 		if(self.problem_name == "TSP"):
 			self.pad_k = 1.
-		elif("large" in self.dataset_name):
+		elif("large" or "KS" in self.dataset_name):
 			self.pad_k = 1.05
 		else:
 			self.pad_k = 1.3

@@ -31,6 +31,7 @@ python argparse_ray_main.py --lrs 0.002 --GPUs 0,5,6,7 --n_GNN_layers 8 --temps 
 python ConditionalExpectation.py --wandb_id xvrrfwsg --dataset RB_iid_small --GPU 0 --evaluation_factor 3 --n_samples 8
 python MIS_evaluate.py --wandb_id z5xmvb6v --dataset KS_4_1000 --GPU 7 --evaluation_factor 3 --n_samples 8
 python MIS_evaluate.py --wandb_id xvrrfwsg --dataset KS_3_1000 --GPU 2 --evaluation_factor 3 --n_samples 1
+python MIS_evaluate.py --wandb_id spcrakpu --dataset KS_3_1000 --GPU 1 --evaluation_factor 3 --n_samples 1
 
 
 
@@ -49,5 +50,6 @@ python ConditionalExpectation.py --wandb_id xvrrfwsg --dataset RS_iid_small --GP
 export GUROBI_HOME=/home/chenhaojun/opt/gurobi1102/linux64
 export PATH=$GUROBI_HOME/bin:$PATH
 export GRB_LICENSE_FILE =/home/chenhaojun/gurobi.lic
+# /home/chenhaojun/scratch/gurobi1102
 
-
+python continue_training.py --wandb_id z5xmvb6v --GPUs 2,3,6,7 --continue_dataset KS_3_1000

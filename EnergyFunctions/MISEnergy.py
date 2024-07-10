@@ -40,7 +40,8 @@ class MISEnergyClass(BaseEnergyClass):
         return Energy, violations_per_node, HB_per_graph
 
 
-    def calculate_relaxed_Energy(self, H_graph, bins, node_gr_idx, A = 1., B = 1.2):
+    # def calculate_relaxed_Energy(self, H_graph, bins, node_gr_idx, A = 1., B = 1.2):
+    def calculate_relaxed_Energy(self, H_graph, bins, node_gr_idx, A = 1., B = 1.01):
         self.calculate_Energy(H_graph, bins, node_gr_idx, A = A, B = B)
 
     @partial(jax.jit, static_argnums=(0,))
