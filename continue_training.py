@@ -8,6 +8,9 @@ parser.add_argument('--wandb_id', default = "",type = str, help='Switch ray into
 parser.add_argument('--GPUs', default=["0"], type = str, help='Define Nb', nargs = "+")
 parser.add_argument('--memory', default=0.92, type = float, help="GPU memory")
 parser.add_argument('--continue_dataset', default="KS_3_1000", type = str)
+parser.add_argument('--energy_A', default=1., type = float)
+parser.add_argument('--energy_B', default=2., type = float)
+parser.add_argument('--batch_size', default=20, type = int)
 
 ### TODO add gradient clipping?
 args = parser.parse_args()
@@ -46,7 +49,7 @@ def meanfield_run():
     #os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"] = "platform"
     config = {"jit": True}
     continue_dataset = args.continue_dataset
-    train = TrainMeanField(config, load_wandb_id=args.wandb_id, continue_dataset=continue_dataset)
+    train = TrainMeanField(config, load_wandb_id=args.wandb_id, continue_dataset=continue_dataset, continue_energy_A=args.energy_A, continue_energy_B=args.energy_B, continue_batch_size=args.batch_size)
 
     train.train()
 

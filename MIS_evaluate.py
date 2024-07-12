@@ -447,8 +447,8 @@ import argparse
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--wandb_id', default="z5xmvb6v", type = str)
-parser.add_argument('--dataset', default="KS_4_100", type = str)
+parser.add_argument('--wandb_id', default="71qtteyy", type = str)
+parser.add_argument('--dataset', default="KS_3_1000", type = str)
 parser.add_argument('--GPU', default=7, type = int)
 parser.add_argument('--evaluation_factor', default=3, type = int)
 parser.add_argument('--n_samples', default=1, type = int, help = "number of samples for each graph")
@@ -458,6 +458,9 @@ args = parser.parse_args()
 # args=Namespace(wandb_id='z5xmvb6v', dataset='KS_4_1000', GPU=7, evaluation_factor=3, n_samples=8)
 # print(f"args={args}")
 # import sys; sys.exit()
+# import os
+# os.environ['CUDA_VISIBLE_DEVICES'] = '7'
+
 
 if __name__ == "__main__":
 

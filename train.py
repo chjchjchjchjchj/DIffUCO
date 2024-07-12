@@ -45,7 +45,7 @@ def main():
     raise RuntimeError(exception)
 
 class TrainMeanField:
-	def __init__(self, config, load_wandb_id = None, eval_step_factor = 1, visualize_MIS=False, evaluate_dataset=None, continue_dataset=None):
+	def __init__(self, config, load_wandb_id = None, eval_step_factor = 1, visualize_MIS=False, evaluate_dataset=None, continue_dataset=None, continue_energy_A=None, continue_energy_B=None, continue_batch_size=None):
 		self.load_wandb_id = load_wandb_id
 		jax.config.update('jax_disable_jit', not config["jit"])
 
@@ -57,6 +57,14 @@ class TrainMeanField:
 			self.config["dataset_name"] = evaluate_dataset
 		elif continue_dataset is not None:
 			self.config["dataset_name"] = continue_dataset
+		
+		if continue_energy_A is not None:
+			self.config['energy_A'] = continue_energy_A
+		if continue_energy_B is not None:
+			self.config['energy_B'] = continue_energy_B
+
+		if continue_batch_size is not None:
+			self.config['batch_size'] = continue_batch_size
 		print(self.config)
 
 		self.seed = self.config["seed"]
@@ -177,7 +185,7 @@ class TrainMeanField:
 		else:
 			self.wandb_group = f"{config['seed']}_LMP_T_{config['T_max']}_anneal_{config['N_anneal']}_MPasses_{config['n_message_passes']}"
 
-		wandb_run = f"lr_{config['lr']}_nh_{config['n_hidden_neurons']}_time_cond_{self.time_conditioning }_n_diff_{config['n_diffusion_steps']}_deeper"
+		wandb_run = f"lr_{config['lr']}_nh_{config['n_hidden_neurons']}_time_cond_{self.time_conditioning }_n_diff_{config['n_diffusion_steps']}_deeper_a_{config['energy_A']}_b_{config['energy_B']}_noise_{config['noise_potential']}"
 
 		self.wandb_run_id = wandb.util.generate_id()
 		self.wandb_run = f"{self.load_wandb_id}_{self.wandb_run_id}_{wandb_run}"

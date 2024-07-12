@@ -7,6 +7,9 @@ class MISEnergyClass(BaseEnergyClass):
 
     def __init__(self, config):
         super().__init__(config)
+        self.A = config['energy_A'] # 1.
+        self.B = config['energy_B'] # 1.01
+        print(f"MISEnergyClass: A = {self.A}, B = {self.B} ...")
         pass
 
     @partial(jax.jit, static_argnums=(0,))
@@ -21,7 +24,8 @@ class MISEnergyClass(BaseEnergyClass):
         :param B:
         :return:
         '''
-
+        A = self.A
+        B = self.B
         n_graph = H_graph.n_node.shape[0]
         nodes = H_graph.nodes
         total_num_nodes = jax.tree_util.tree_leaves(nodes)[0].shape[0]

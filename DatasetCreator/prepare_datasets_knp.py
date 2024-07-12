@@ -31,6 +31,8 @@ parser.add_argument('--datasets_path', default="draft/Data_for_solver_3.pkl", ty
 parser.add_argument('--uniform_generate_data', default=False, type = bool, help='uniformly generate data')
 parser.add_argument('--dim', default=3, type = int, help='generate ndim graphs')
 parser.add_argument('--num_samples', default=1000, type = int, help='the number of nodes of generated graphs')
+parser.add_argument('--st_idx', default=0, type = int)
+parser.add_argument('--ed_idx', default=6000, type = int)
 parser.add_argument('--GPUs', default=["6"], type = str, help='Define Nb', nargs = "+")
 parser.add_argument('--thread_fraction', default=0.5, type = float)
 #parser.add_argument('--n_graphs', default=[100, 10, 10], type = int, help='Number of graphs for each [mode]', nargs = "+")
@@ -111,6 +113,8 @@ if __name__ == "__main__":
 					'dim': args.dim,
 					'num_samples': args.num_samples,
                     'thread_fraction': args.thread_fraction,
+                    'st_idx': args.st_idx,
+                    'ed_idx': args.ed_idx,
 				}
 				print(f"base_config={base_config}")
 				create_dataset(base_config, args.modes, args.time_limits)

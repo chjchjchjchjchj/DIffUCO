@@ -9,7 +9,7 @@ parser.add_argument('--multi_gpu', action='store_true', help='wheter to use mult
 parser.add_argument('--mode', default='Diffusion', choices = ["Diffusion"], help='Define the Approach')
 parser.add_argument('--EnergyFunction', default='MIS', choices = ["MaxCut", "MIS", "MVC", "MaxCl", "WMIS", "MDS"], help='Define the EnergyFunction of the IsingModel')
 # parser.add_argument('--IsingMode', default='RB_iid_100', choices = ["Gset","BA_large","RB_iid_small", "RB_iid_dummy", "BA_dummy", "RB_iid_large" ,"RRG_200_k_=all", "BA_small", "COLLAB", "IMDB-BINARY", "RB_iid_100_dummy" , "RB_iid_200", "RB_iid_100"], help='Define the Training dataset')
-parser.add_argument('--IsingMode', default='RB_iid_100', choices = ["Gset","BA_large","RB_iid_small", "RB_iid_dummy", "BA_dummy", "RB_iid_large" ,"RRG_200_k_=all", "BA_small", "COLLAB", "IMDB-BINARY", "RB_iid_100_dummy" , "RB_iid_200", "RB_iid_100", "KS_iid_1000"], help='Define the Training dataset')
+parser.add_argument('--IsingMode', default='RB_iid_100', choices = ["Gset","BA_large","RB_iid_small", "RB_iid_dummy", "BA_dummy", "RB_iid_large" ,"RRG_200_k_=all", "BA_small", "COLLAB", "IMDB-BINARY", "RB_iid_100_dummy" , "RB_iid_200", "RB_iid_100", "KS_iid_1000", "KS_3_1000", "KS_3_1000_2000"], help='Define the Training dataset')
 parser.add_argument('--graph_mode', default='normal', choices = ["normal"], help='Use U-Net or normal GNN')
 parser.add_argument('--train_mode', default='REINFORCE', choices = ["REINFORCE"], help='Use U-Net or normal GNN')
 parser.add_argument('--AnnealSchedule', default='linear', choices = ["linear", "cosine"], help='Define the Annealing Schedule')
@@ -57,6 +57,8 @@ parser.add_argument('--graph_norm', action='store_true')
 parser.add_argument('--no-graph_norm', dest='graph_norm', action='store_false')
 parser.add_argument('--lr_schedule', action='store_true')
 parser.add_argument('--no-lr_schedule', dest='lr_schedule', action='store_false')
+parser.add_argument('--energy_A', default=1., type = float)
+parser.add_argument('--energy_B', default=1.01, type = float)
 parser.set_defaults(CE=False)
 parser.set_defaults(graph_norm=True)
 parser.set_defaults(grad_clip=True)
@@ -211,7 +213,9 @@ def detect_and_run_for_loops():
                                                 "proj_method": args.proj_method,
                                                 "diff_schedule": args.diff_schedule,
                                                 "mov_average": args.mov_average,
-                                                "lr_schedule": args.lr_schedule
+                                                "lr_schedule": args.lr_schedule,
+                                                "energy_A": args.energy_A,
+                                                "energy_B": args.energy_B,
                                             }
 
                                             run(flexible_config=flexible_config, overwrite=True)
@@ -276,7 +280,9 @@ def run( flexible_config, overwrite = True):
         "proj_method": "None",
         "diff_schedule": "DiffUCO",
         "mov_average": 0.05,
-        "lr_schedule": False
+        "lr_schedule": False,
+        "energy_A": 1.0,
+        "energy_B": 1.01,
 
     }
 

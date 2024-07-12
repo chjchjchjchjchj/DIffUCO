@@ -1,6 +1,6 @@
 # preparing datasets
 # python prepare_datasets_knp.py --datasets_name KS_5 --problem MIS --datasets_path /home/chenhaojun/DIffUCO/draft/Data_for_solver_3.pkl --licence_path /home/chenhaojun
-python prepare_datasets_knp.py --datasets_name KS_4 --problem MIS --datasets_path /home/chenhaojun/DIffUCO/draft/Data_for_solver_3.pkl --licence_path /home/chenhaojun --uniform_generate_data True --dim 4 --num_samples 3000 --thread_fraction 1 --GPUs ['1'] 
+python prepare_datasets_knp.py --datasets_name KS_3 --problem MIS --datasets_path /home/chenhaojun/DIffUCO/draft/Data_for_solver_3.pkl --licence_path /home/chenhaojun --uniform_generate_data True --dim 3 --num_samples 1000 --thread_fraction 1 --GPUs ['5'] --st_idx 0 --ed_idx 500 
 python prepare_datasets_knp.py --datasets_name KS_5 --problem MIS --datasets_path /home/chenhaojun/DIffUCO/draft/Data_for_solver_3.pkl --licence_path /home/chenhaojun --uniform_generate_data True --dim 5 --num_samples 5000 --thread_fraction 1 --GPUs ['2'] 
 python prepare_datasets_knp.py --datasets_name KS_4 --problem MIS --datasets_path /home/chenhaojun/DIffUCO/draft/Data_for_solver_3.pkl --licence_path /home/chenhaojun --uniform_generate_data True --dim 4 --num_samples 3000 --thread_fraction 1 --GPUs ['3','4','5','6','7'] 
 python prepare_datasets_knp.py --datasets_name KS_4 --problem MIS --datasets_path /home/chenhaojun/DIffUCO/draft/Data_for_solver_3.pkl --licence_path /home/chenhaojun --uniform_generate_data True --dim 4 --num_samples 1000 --thread_fraction 1 --GPUs ['6'] 
@@ -32,6 +32,7 @@ python ConditionalExpectation.py --wandb_id xvrrfwsg --dataset RB_iid_small --GP
 python MIS_evaluate.py --wandb_id z5xmvb6v --dataset KS_4_1000 --GPU 7 --evaluation_factor 3 --n_samples 8
 python MIS_evaluate.py --wandb_id xvrrfwsg --dataset KS_3_1000 --GPU 2 --evaluation_factor 3 --n_samples 1
 python MIS_evaluate.py --wandb_id spcrakpu --dataset KS_3_1000 --GPU 1 --evaluation_factor 3 --n_samples 1
+python MIS_evaluate.py --wandb_id 71qtteyy --dataset KS_3_1000_train --GPU 1 --evaluation_factor 3 --n_samples 1 --GPU 7
 
 
 
@@ -53,3 +54,24 @@ export GRB_LICENSE_FILE =/home/chenhaojun/gurobi.lic
 # /home/chenhaojun/scratch/gurobi1102
 
 python continue_training.py --wandb_id z5xmvb6v --GPUs 2,3,6,7 --continue_dataset KS_3_1000
+
+
+
+
+# Ours
+# prepare dataset
+cd DatasetCreator/
+python prepare_datasets_knp.py --datasets_name KS_3 --problem MIS --datasets_path /home/chenhaojun/DIffUCO/draft/Data_for_solver_3.pkl --licence_path /home/chenhaojun --uniform_generate_data True --dim 3 --num_samples 1000 --thread_fraction 1 --st_idx 0 --modes "test" --time_limits "inf" --GPUs ['0']
+python prepare_datasets_knp.py --datasets_name KS_3 --problem MIS --datasets_path /home/chenhaojun/DIffUCO/draft/Data_for_solver_3.pkl --licence_path /home/chenhaojun --uniform_generate_data True --dim 3 --num_samples 1000 --thread_fraction 1 --st_idx 0 --modes "val" --time_limits "1" --GPUs ['1']
+python prepare_datasets_knp.py --datasets_name KS_3 --problem MIS --datasets_path /home/chenhaojun/DIffUCO/draft/Data_for_solver_3.pkl --licence_path /home/chenhaojun --uniform_generate_data True --dim 3 --num_samples 1000 --thread_fraction 1 --st_idx 0 --ed_idx 500 --modes "train" --time_limits "0.1" --GPUs ['2']
+python prepare_datasets_knp.py --datasets_name KS_3 --problem MIS --datasets_path /home/chenhaojun/DIffUCO/draft/Data_for_solver_3.pkl --licence_path /home/chenhaojun --uniform_generate_data True --dim 3 --num_samples 1000 --thread_fraction 1 --st_idx 500 --ed_idx 1000 --modes "train" --time_limits "0.1" --GPUs ['3']
+python prepare_datasets_knp.py --datasets_name KS_3 --problem MIS --datasets_path /home/chenhaojun/DIffUCO/draft/Data_for_solver_3.pkl --licence_path /home/chenhaojun --uniform_generate_data True --dim 3 --num_samples 1000 --thread_fraction 1 --st_idx 1000 --ed_idx 1500 --modes "train" --time_limits "0.1" --GPUs ['4']
+python prepare_datasets_knp.py --datasets_name KS_3 --problem MIS --datasets_path /home/chenhaojun/DIffUCO/draft/Data_for_solver_3.pkl --licence_path /home/chenhaojun --uniform_generate_data True --dim 3 --num_samples 1000 --thread_fraction 1 --st_idx 1500 --ed_idx 2000 --modes "train" --time_limits "0.1" --GPUs ['5']
+
+
+# train
+python argparse_ray_main.py --lrs 0.002 --GPUs 5,6,7 --n_GNN_layers 7 --temps 0.3 --IsingMode KS_3_1000 --EnergyFunction MIS --energy_A 1.0 --energy_B 1.2 --N_anneal 3000  --n_diffusion_steps 4 --batch_size 10 --n_basis_states 10 --noise_potential annealed_obj --project_name A800 --seed 123 
+
+
+
+python continue_training.py --wandb_id 71qtteyy --GPUs 1,2,3,4,5,6,7 --continue_dataset KS_3_1000 --energy_A 1.0 --energy_B 2.0 --batch_size 20

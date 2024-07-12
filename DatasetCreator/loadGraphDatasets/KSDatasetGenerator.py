@@ -30,6 +30,8 @@ class KSDatasetGenerator(BaseDatasetGenerator):
 		self.dim = config['dim']
 		self.num_samples = config['num_samples']
 		self.thread_fraction = config['thread_fraction']
+		self.st_idx = config['st_idx']
+		self.ed_idx = config['ed_idx']
 		if self.uniform_generate_data:
 			print(f"generate {self.dim} dimension {self.num_samples} nodes graphs, thread_fraction is {self.thread_fraction}!!!!!!!!!!!!!")
 		if not self.uniform_generate_data:
@@ -178,7 +180,10 @@ class KSDatasetGenerator(BaseDatasetGenerator):
 			"p": [],
 			"coordinate": [],
 		}
-		for idx in tqdm(range(self.graph_config[f"n_{self.mode}"])):
+		# self.ed_idx = self.graph_config[f"n_{self.mode}"]
+		# for idx in tqdm(range(self.graph_config[f"n_{self.mode}"])):
+		print(f"start at {self.st_idx}, end at {self.ed_idx} ...")
+		for idx in tqdm(range(self.st_idx, self.ed_idx)):
 		# for idx in tqdm(range(num_graphs)):
 			while True:
 				if (not self.diff_ps):
@@ -189,8 +194,8 @@ class KSDatasetGenerator(BaseDatasetGenerator):
 				#print("curr", p)
 
 				min_n, max_n = self.graph_config["n_min"], self.graph_config["n_max"]
-				n = np.random.randint(self.graph_config["n_low"], self.graph_config["n_high"])
-				k = np.random.randint(self.graph_config["k_low"], self.graph_config["k_high"])
+				# n = np.random.randint(self.graph_config["n_low"], self.graph_config["n_high"])
+				# k = np.random.randint(self.graph_config["k_low"], self.graph_config["k_high"])
 				# ipdb.set_trace()
 				# edges = generate_xu_instances.get_random_instance(n, k, p)
 				if self.mode == "train":
@@ -214,7 +219,28 @@ class KSDatasetGenerator(BaseDatasetGenerator):
 
 			if not self.gurobi_solve:
 				if self.problem == "MaxCl" or self.problem == "MIS":
-					Energy = -n
+					# Energy = -12
+					if self.dim == 2:
+						Energy = -6
+					elif self.dim == 3:
+						Energy = -12
+					elif self.dim == 4:
+						Energy = -24
+					elif self.dim == 5:
+						Energy = -41
+					elif self.dim == 6:
+						Energy = -73
+					elif self.dim == 7:
+						Energy = -127
+					elif self.dim == 8:
+						Energy = -240
+					elif self.dim == 9:
+						Energy = -307
+					elif self.dim == 10:
+						Energy = -511
+					else:
+						raise NotImplementedError
+
 
 			solutions["Energies"].append(Energy)
 			solutions["H_graphs"].append(H_graph)
@@ -233,6 +259,7 @@ class KSDatasetGenerator(BaseDatasetGenerator):
 			indexed_solution_dict = {}
 			for key in solutions.keys():
 				if len(solutions[key]) > 0:
-					indexed_solution_dict[key] = solutions[key][idx]
+					# indexed_solution_dict[key] = solutions[key][idx]
+					indexed_solution_dict[key] = solutions[key][idx-self.st_idx]
 			self.save_instance_solution(indexed_solution_dict, idx)
 		self.save_solutions(solutions)
