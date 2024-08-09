@@ -295,7 +295,11 @@ class SolutionDataset_InMemory(Dataset):
     def __getitem__(self, idx):
 
         with open(self.base_path + f"idx_{idx}_solutions.pickle", "rb") as file:
-            graph_dict = pickle.load(file)
+            try:
+                graph_dict = pickle.load(file)
+            except EOFError:
+                print(f"EOFError: File {self.base_path + f'idx_{idx}_solutions.pickle'} is incomplete or corrupt.")
+
 
         input_graph = graph_dict["H_graphs"]
 

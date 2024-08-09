@@ -11,6 +11,9 @@ parser.add_argument('--continue_dataset', default="KS_3_1000", type = str)
 parser.add_argument('--energy_A', default=1., type = float)
 parser.add_argument('--energy_B', default=2., type = float)
 parser.add_argument('--batch_size', default=20, type = int)
+parser.add_argument('--add_epoch', default=2000, type = int)
+parser.add_argument('--N_basis_states', default=2, type = int)
+# parser.add_argument('--n_diffusion_steps', default=6, type = int)
 
 ### TODO add gradient clipping?
 args = parser.parse_args()
@@ -49,7 +52,7 @@ def meanfield_run():
     #os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"] = "platform"
     config = {"jit": True}
     continue_dataset = args.continue_dataset
-    train = TrainMeanField(config, load_wandb_id=args.wandb_id, continue_dataset=continue_dataset, continue_energy_A=args.energy_A, continue_energy_B=args.energy_B, continue_batch_size=args.batch_size)
+    train = TrainMeanField(config, load_wandb_id=args.wandb_id, continue_dataset=continue_dataset, continue_energy_A=args.energy_A, continue_energy_B=args.energy_B, continue_batch_size=args.batch_size, add_epoch=args.add_epoch, continue_N_basis_states=args.N_basis_states)
 
     train.train()
 

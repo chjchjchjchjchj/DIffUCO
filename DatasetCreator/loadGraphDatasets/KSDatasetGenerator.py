@@ -53,6 +53,15 @@ class KSDatasetGenerator(BaseDatasetGenerator):
 				"k_low": 5, "k_high": 12,
 				"n_train": 4000, "n_val": 500, "n_test": 500
 			}
+		if "d_re" in dataset_name:
+			self.size = "large"
+			graph_config = {
+				"p_low": 0.3, "p_high": 1,
+				"n_min": 5000, "n_max": 5000,
+				"n_low": 20, "n_high": 25,
+				"k_low": 5, "k_high": 12,
+				"n_train": 5000, "n_val": 500, "n_test": 500
+			}
 		elif "large" in dataset_name:
 			self.size = "large"
 			graph_config = {
@@ -107,6 +116,16 @@ class KSDatasetGenerator(BaseDatasetGenerator):
 				"k_low": 8, "k_high": 11,
 				"n_train": 300, "n_val": 500, "n_test": 500
 			}
+		elif "KS_one" in dataset_name:
+			self.size = "1000"
+			graph_config = {
+				"p_low": 0.25, "p_high": 1,
+				"n_min": 0, "n_max": np.inf,
+				"n_low": 60, "n_high": 70,
+				"k_low": 15, "k_high": 20,
+				"n_train": 5000, "n_val": 500, "n_test": 500
+				# "n_train": 30, "n_val": 5, "n_test": 5
+			}
 		elif "KS_3" in dataset_name:
 			self.size = "1000"
 			graph_config = {
@@ -114,7 +133,7 @@ class KSDatasetGenerator(BaseDatasetGenerator):
 				"n_min": 0, "n_max": np.inf,
 				"n_low": 60, "n_high": 70,
 				"k_low": 15, "k_high": 20,
-				"n_train": 3000, "n_val": 500, "n_test": 500
+				"n_train": 5000, "n_val": 500, "n_test": 500
 				# "n_train": 30, "n_val": 5, "n_test": 5
 			}
 		elif "KS_4" in dataset_name:
@@ -124,7 +143,7 @@ class KSDatasetGenerator(BaseDatasetGenerator):
 				"n_min": 0, "n_max": np.inf,
 				"n_low": 60, "n_high": 70,
 				"k_low": 15, "k_high": 20,
-				"n_train": 3000, "n_val": 500, "n_test": 500
+				"n_train": 5000, "n_val": 500, "n_test": 500
 				# "n_train": 30, "n_val": 5, "n_test": 5
 			}
 		elif "KS_5" in dataset_name:
@@ -134,7 +153,7 @@ class KSDatasetGenerator(BaseDatasetGenerator):
 				"n_min": 0, "n_max": np.inf,
 				"n_low": 60, "n_high": 70,
 				"k_low": 15, "k_high": 20,
-				"n_train": 3000, "n_val": 500, "n_test": 500
+				"n_train": 5000, "n_val": 500, "n_test": 500
 				# "n_train": 30, "n_val": 5, "n_test": 5
 			}
 		else:
@@ -152,6 +171,22 @@ class KSDatasetGenerator(BaseDatasetGenerator):
 	# 		else:
 	# 			self.dataset_name = f"RB_iid_{self.size}"
 	# 		self.generate_graphs(p)
+
+	def generate_d_regular_graphs(self, num_graphs, num_nodes, degree):
+		graphs = []
+		
+		for _ in range(num_graphs):
+			# Generate a d-regular graph
+			while True:
+				try:
+					graph = ig.Graph.Degree_Sequence([degree] * num_nodes, method="vl")
+					graphs.append(graph)
+					break
+				except ValueError:
+					# This can happen if a degree sequence is not graphical, retry
+					continue
+
+		return graphs
 
 	def generate_dataset(self):
 		"""
@@ -204,14 +239,20 @@ class KSDatasetGenerator(BaseDatasetGenerator):
 					selected_idx = self.graph_config["n_train"] + idx
 				elif self.mode == "test":
 					selected_idx = self.graph_config["n_train"] + self.graph_config["n_val"] + idx
-				
-				if self.uniform_generate_data:
-					edges, coordinate = generate_ks_instances.get_random_instance(dim=self.dim, num_samples=self.num_samples)
-				else: edges = Counter(self.loaded_graphs['overlap_id'][selected_idx])
-				g = ig.Graph([(edge[0], edge[1]) for edge in edges])
-				# isolated_nodes = [v.index for v in g.vs if v.degree() == 0]
-				# g.delete_vertices(isolated_nodes)
-				num_nodes = g.vcount()
+				if "d_re" in self.dataset_name:
+					degree = np.random.uniform(3, 10)
+					num_nodes = 5000
+					g = self.generate_d_regular_graphs(num_graphs=1, num_nodes=num_nodes, degree=degree)[0]
+					num_nodes = g.vcount()
+				else:
+					if self.uniform_generate_data:
+						edges, coordinate = generate_ks_instances.get_random_instance(dim=self.dim, num_samples=self.num_samples)
+					else: 
+						edges = Counter(self.loaded_graphs['overlap_id'][0])
+					g = ig.Graph([(edge[0], edge[1]) for edge in edges])
+					# isolated_nodes = [v.index for v in g.vs if v.degree() == 0]
+					# g.delete_vertices(isolated_nodes)
+					num_nodes = g.vcount()
 				if min_n <= num_nodes <= max_n:
 					break
 			H_graph, density, graph_size = self.igraph_to_jraph(g)
@@ -252,7 +293,8 @@ class KSDatasetGenerator(BaseDatasetGenerator):
 			solutions["compl_H_graphs"].append(compl_H_graph)
 			solutions["p"].append(p)
 			if not self.uniform_generate_data:
-				solutions["coordinate"].append(self.loaded_graphs['unit_vectors'][selected_idx])
+				# solutions["coordinate"].append(self.loaded_graphs['unit_vectors'][selected_idx])
+				solutions["coordinate"].append(self.loaded_graphs['unit_vectors'][0])
 			else:
 				solutions["coordinate"].append(coordinate)
 

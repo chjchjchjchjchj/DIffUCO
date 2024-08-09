@@ -45,7 +45,7 @@ def main():
     raise RuntimeError(exception)
 
 class TrainMeanField:
-	def __init__(self, config, load_wandb_id = None, eval_step_factor = 1, visualize_MIS=False, evaluate_dataset=None, continue_dataset=None, continue_energy_A=None, continue_energy_B=None, continue_batch_size=None):
+	def __init__(self, config, load_wandb_id = None, eval_step_factor = 1, visualize_MIS=False, evaluate_dataset=None, continue_dataset=None, continue_energy_A=None, continue_energy_B=None, continue_batch_size=None, continue_n_diffusion_steps=None, use_wandb=True, add_epoch=None, continue_N_basis_states=None):
 		self.load_wandb_id = load_wandb_id
 		jax.config.update('jax_disable_jit', not config["jit"])
 
@@ -65,6 +65,12 @@ class TrainMeanField:
 
 		if continue_batch_size is not None:
 			self.config['batch_size'] = continue_batch_size
+		if add_epoch is not None:
+			self.config['N_anneal'] += add_epoch
+		if continue_N_basis_states is not None:
+			self.config['N_basis_states'] = continue_N_basis_states
+			
+		self.config['wandb'] = use_wandb
 		print(self.config)
 
 		self.seed = self.config["seed"]
@@ -77,6 +83,8 @@ class TrainMeanField:
 		self.problem_name = self.config["problem_name"] # MIS
 
 		if(self.problem_name == "TSP"):
+			self.pad_k = 1.
+		elif("KS_3_1000" or "KS_5_5000" in self.dataset_name):
 			self.pad_k = 1.
 		elif("large" or "KS" in self.dataset_name):
 			self.pad_k = 1.05
@@ -176,6 +184,7 @@ class TrainMeanField:
 			self.wandb_mode = "online"
 		else:
 			self.wandb_mode = "disabled"
+		# self.wandb_mode = "disabled"
 
 		config = self.config
 
@@ -184,10 +193,16 @@ class TrainMeanField:
 			self.wandb_group = f"{config['seed']}_LMP_T_{config['T_max']}_noise_potential_{config['noise_potential']}_anneal_{config['N_anneal']}_MPasses_{config['n_message_passes']}"
 		else:
 			self.wandb_group = f"{config['seed']}_LMP_T_{config['T_max']}_anneal_{config['N_anneal']}_MPasses_{config['n_message_passes']}"
-
-		wandb_run = f"lr_{config['lr']}_nh_{config['n_hidden_neurons']}_time_cond_{self.time_conditioning }_n_diff_{config['n_diffusion_steps']}_deeper_a_{config['energy_A']}_b_{config['energy_B']}_noise_{config['noise_potential']}"
-
-		self.wandb_run_id = wandb.util.generate_id()
+        
+		try:
+			wandb_run = f"lr_{config['lr']}_nh_{config['n_hidden_neurons']}_time_cond_{self.time_conditioning }_n_diff_{config['n_diffusion_steps']}_deeper_a_{config['energy_A']}_b_{config['energy_B']}_noise_{config['noise_potential']}"
+		except:
+			config['energy_A'] = 1.0
+			config['energy_B'] = 1.01
+			wandb_run = f"lr_{config['lr']}_nh_{config['n_hidden_neurons']}_time_cond_{self.time_conditioning }_n_diff_{config['n_diffusion_steps']}_deeper_noise_{config['noise_potential']}"
+		# self.wandb_run_id = wandb.util.generate_id()
+		import uuid
+		self.wandb_run_id = uuid.uuid4().hex[:8]
 		self.wandb_run = f"{self.load_wandb_id}_{self.wandb_run_id}_{wandb_run}"
 
 		self.best_rel_error = float('inf')
@@ -581,6 +596,9 @@ class TrainMeanField:
 				gt_normed_energies = batch_dict["energies"]
 				print("batch", iter, "of", len(self.dataloader_train))
 				print("batchsize is", len(gt_normed_energies))
+				if len(gt_normed_energies) < jax.local_device_count():
+					print(f"skip this iteration")
+					continue
 
 				step1 = time.time()
 				loss, (log_dict, energy_graph_batch, batching_time) = self.train_step(batch_dict)
@@ -686,8 +704,12 @@ class TrainMeanField:
 		for iter, (batch_dict) in enumerate(dataloader):
 			gt_normed_energies = batch_dict["energies"]
 			print("batchsize is", len(gt_normed_energies))
+			if len(gt_normed_energies) < jax.local_device_count():
+				print(f"skip this iteration")
+				continue			
 
 			graph_batch, energy_graph_batch = self._prepare_graphs(batch_dict)
+
 
 			self.key, subkey = jax.random.split(self.key)
 			batched_key = jax.random.split(subkey, num = len(jax.devices()))
@@ -781,6 +803,9 @@ class TrainMeanField:
 		for iter, (batch_dict) in enumerate(dataloader):
 			gt_normed_energies = batch_dict["energies"]
 			print("batchsize is", len(gt_normed_energies))
+			if len(gt_normed_energies) < jax.local_device_count():
+				print(f"skip this iteration")
+				continue
 
 			graph_batch, energy_graph_batch = self._prepare_graphs(batch_dict)
 
@@ -834,7 +859,7 @@ class TrainMeanField:
 				import pickle
 				dataset_name = self.config["dataset_name"]
 				# import ipdb; ipdb.set_trace()
-				save_path_dir = Path(os.getcwd()) / "Checkpoints"/ self.load_wandb_id / f"visualization_{dataset_name}" / f"{iter}"
+				save_path_dir = Path(os.getcwd()) / "Checkpoints"/ self.load_wandb_id / f"visualization_{dataset_name}" / f"{self.config['n_diffusion_steps']}x{self.config['eval_step_factor']}" / f"{iter}"
 				save_path_dir.mkdir(parents=True, exist_ok=True)
 				jgraph_save_path = save_path_dir / "jgraph.pkl"
 				solution_save_path = save_path_dir / "solution.pkl"
@@ -920,9 +945,12 @@ class TrainMeanField:
 			if (True):
 				#input_graph = pad_graph_to_nearest_power_of_k(input_graph, k=self.pad_k)
 				#energy_graph = pad_graph_to_nearest_power_of_k(energy_graph, k=self.pad_k)
-
-				input_graph = jraph_utils.pmap_graph_list(input_graph, k = self.pad_k)
-				energy_graph = jraph_utils.pmap_graph_list(energy_graph, k = self.pad_k)
+				try:
+					input_graph = jraph_utils.pmap_graph_list(input_graph, k = self.pad_k)
+					energy_graph = jraph_utils.pmap_graph_list(energy_graph, k = self.pad_k)
+				except:
+					ipdb.set_trace()
+					print(input_graph)
 
 			else:
 				del energy_graph
